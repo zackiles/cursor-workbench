@@ -1,0 +1,85 @@
+{
+  "deno.enable": true,
+  "deno.config": "./deno.jsonc",
+  "deno.importMap": "./deno.jsonc",
+  "deno.unstable": [
+    "kv",
+    "net",
+    "http",
+    "fs",
+    "ffi",
+    "cron",
+    "temporal",
+    "webgpu",
+    "unsafe-proto",
+    "webgpu",
+    "decorators"
+  ],
+  "deno.codeLens.implementations": true,
+  "deno.codeLens.references": true,
+  "deno.codeLens.referencesAllFunctions": true,
+  "deno.codeLens.test": true,
+  "deno.internalDebug": true,
+  "deno.internalInspect": false,
+  "deno.maxTsServerMemory": 6000,
+  "files.eol": "\n",
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+  "editor.detectIndentation": false,
+  "editor.indentSize": 2,
+  "editor.insertSpaces": true,
+  "json.schemaDownload.enable": true,
+  "files.associations": {
+    "repomix.config.json": "json5"
+  },
+  "workbench.editorAssociations": {
+    "*.mdc": "default",
+  },
+  "[json][jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "[markdown][typescript][javascript]": {
+    "editor.defaultFormatter": "denoland.vscode-deno",
+    "editor.formatOnSave": true
+  },
+  "search.exclude": {
+    "**/.cursor": true
+  },
+  "cSpell.dictionaries": [
+    "!typescript"
+  ],
+  "cSpell.words": [
+    "deno",
+    "typeof",
+    "zackiles",
+    "zacharyiles",
+    "asynciterable",
+    "webgpu",
+    "Iles",
+    "onclose",
+    "Zipkin",
+    "parentbased",
+    "tracestate",
+    "traceparent",
+    "MILLIS",
+    "msvc",
+    "denoland",
+    "dotenv",
+    "swapfile",
+    "hiberfil",
+    "dconf",
+    "keyrings",
+    "dbus",
+    "dockerenv",
+    "fseventsd",
+    "modelcontextprotocol",
+    "rwxr",
+    "pids",
+    "USERPROFILE",
+    "unvalidated",
+    "somevalue",
+    "repomix",
+    "cursorignoreindex",
+    ".cursorignore"
+  ]
+}
