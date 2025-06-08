@@ -1,0 +1,18 @@
+---
+rule: example-rule
+globs: "*.ts,*.js"
+---
+
+# Sample Rule Content
+
+This is a test file for the custom file editor extension.
+
+## Features
+
+- Custom editor for files with YAML front matter
+- YAML front matter parsing
+- Simple form-based editing interface
+- VS Code theme integration
+- Easily configurable for different file extensions
+
+The extension should parse the front matter and display it in separate input fields.

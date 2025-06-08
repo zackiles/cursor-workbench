@@ -1,0 +1,63 @@
+{
+  "name": "cursor-workbench",
+  "displayName": "Cursor Workbench",
+  "version": "0.0.1",
+  "description": "Generic VS Code extension for editing files with YAML front matter and content",
+  "publisher": "cursor-workbench",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCustomEditor:customFileEditor"
+  ],
+  "main": "./bin/main.js",
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "customFileEditor",
+        "displayName": "Custom File Editor",
+        "selector": [
+          {
+            "filenamePattern": "*.rule"
+          }
+        ],
+        "priority": "default"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "node build.js",
+    "watch": "node build.js --watch",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "package": "vsce package",
+    "vscode:prepublish": "npm run build",
+    "dev": "npm run watch",
+    "test:local": "node scripts/test-local.js",
+    "verify:package": "node scripts/verify-package.js",
+    "install:local": "code --install-extension cursor-workbench-0.0.1.vsix",
+    "uninstall-extension": "code --uninstall-extension cursor-workbench.cursor-workbench",
+    "release:local": "node scripts/release-local.js",
+    "dev:install": "npm run build && npm run package && npm run install:local"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zackiles/cursor-workbench.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/zackiles/cursor-workbench/issues"
+  },
+  "homepage": "https://github.com/zackiles/cursor-workbench#readme",
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^20.12.12",
+    "@types/vscode": "^1.85.0",
+    "esbuild": "^0.19.12",
+    "typescript": "^5.4.5",
+    "vsce": "^2.15.0"
+  }
+}

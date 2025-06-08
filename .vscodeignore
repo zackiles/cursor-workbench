@@ -1,0 +1,73 @@
+# VS Code Extension Ignore File
+# Files and folders to exclude from the extension package
+
+# Source files (we only need compiled output)
+src/**
+tsconfig.json
+*.ts
+
+# Build and development files
+build.js
+scripts/**
+test/**
+docs/**
+.vscode/**
+
+# Dependencies (should be bundled, not included as separate files)
+node_modules/**
+
+# Git and version control
+.git/**
+.github/**
+.gitignore
+.gitattributes
+
+# Development and configuration files
+*.md
+!README.md
+.env*
+.editorconfig
+.cursorignore*
+.repomixignore
+biome.json
+.npmignore
+
+# Development artifacts
+*.vsix
+*.log
+*.tsbuildinfo
+coverage/**
+.nyc_output/**
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Temporary files
+tmp/**
+temp/**
+.tmp/**
+
+# Package lock files (not needed in extension)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# IDE specific files
+.idea/**
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Only include what's necessary:
+# - package.json (required)
+# - README.md (for marketplace)
+# - bin/** (compiled extension)
+# - Any required assets

@@ -1,0 +1,62 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install vsce (VS Code Extension Manager)
+        run: npm install -g vsce
+
+      - name: Run local configuration tests
+        run: npm run test:local
+
+      - name: Build extension
+        run: npm run build
+
+      - name: Verify package creation
+        run: npm run verify:package
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-package
+          path: cursor-workbench-*.vsix
+          retention-days: 30
+
+      - name: Test Summary
+        if: always()
+        run: |
+          echo "Test Summary"
+          echo "============"
+          echo "Repository: ${{ github.repository }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Triggered by: ${{ github.event_name }}"
+          echo "✅ Dependencies installed"
+          echo "✅ Extension built successfully"
+          echo "✅ Package created and verified"

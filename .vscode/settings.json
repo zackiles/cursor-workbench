@@ -1,27 +1,4 @@
 {
-  "deno.enable": true,
-  "deno.config": "./deno.jsonc",
-  "deno.importMap": "./deno.jsonc",
-  "deno.unstable": [
-    "kv",
-    "net",
-    "http",
-    "fs",
-    "ffi",
-    "cron",
-    "temporal",
-    "webgpu",
-    "unsafe-proto",
-    "webgpu",
-    "decorators"
-  ],
-  "deno.codeLens.implementations": true,
-  "deno.codeLens.references": true,
-  "deno.codeLens.referencesAllFunctions": true,
-  "deno.codeLens.test": true,
-  "deno.internalDebug": true,
-  "deno.internalInspect": false,
-  "deno.maxTsServerMemory": 6000,
   "files.eol": "\n",
   "files.insertFinalNewline": true,
   "files.trimFinalNewlines": true,
@@ -39,7 +16,7 @@
     "editor.defaultFormatter": "vscode.json-language-features"
   },
   "[markdown][typescript][javascript]": {
-    "editor.defaultFormatter": "denoland.vscode-deno",
+    "editor.defaultFormatter": "biomejs.biome",
     "editor.formatOnSave": true
   },
   "search.exclude": {

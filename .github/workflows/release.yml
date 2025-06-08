@@ -1,0 +1,134 @@
+name: Release
+
+on:
+  workflow_run:
+    workflows: ["Test"]
+    types:
+      - completed
+    branches:
+      - main
+
+jobs:
+  release:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+
+      - name: Check if commit has a version tag
+        id: check_tag
+        run: |
+          # Get all tags pointing to this commit
+          TAGS=$(git tag --points-at HEAD)
+          VERSION_TAG=""
+
+          for tag in $TAGS; do
+            if [[ $tag =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              VERSION_TAG=$tag
+              break
+            fi
+          done
+
+          if [ -z "$VERSION_TAG" ]; then
+            echo "❌ No version tag (v[0-9]+.[0-9]+.[0-9]+) found on this commit"
+            exit 1
+          fi
+
+          echo "✓ Found version tag: $VERSION_TAG"
+          echo "version_tag=$VERSION_TAG" >> $GITHUB_OUTPUT
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install vsce (VS Code Extension Manager)
+        run: npm install -g vsce
+
+      - name: Build and package extension
+        run: |
+          npm run build
+          npm run package
+
+      - name: Get package info
+        id: package_info
+        run: |
+          PACKAGE_FILE=$(ls cursor-workbench-*.vsix)
+          PACKAGE_SIZE=$(du -h "$PACKAGE_FILE" | cut -f1)
+          echo "package_file=$PACKAGE_FILE" >> $GITHUB_OUTPUT
+          echo "package_size=$PACKAGE_SIZE" >> $GITHUB_OUTPUT
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          VERSION_TAG="${{ steps.check_tag.outputs.version_tag }}"
+          PACKAGE_FILE="${{ steps.package_info.outputs.package_file }}"
+          PACKAGE_SIZE="${{ steps.package_info.outputs.package_size }}"
+
+          cat > release_notes.md << EOF
+          # Custom File Editor Extension ${VERSION_TAG}
+
+          VS Code extension for editing files with YAML front matter and content.
+
+          ## Features
+          - Custom editor for .rule files (easily configurable for other extensions)
+          - YAML front matter parsing and editing
+          - Simple form-based interface with VS Code theming
+          - Real-time content editing and saving
+
+          ## Installation
+
+          ### Option 1: Download and Install
+          1. Download the \`${PACKAGE_FILE}\` file from the Assets section below
+          2. Install using VS Code command line:
+             \`\`\`bash
+             code --install-extension ${PACKAGE_FILE}
+             \`\`\`
+
+          ### Option 2: VS Code UI
+          1. Download the \`.vsix\` file
+          2. Open VS Code
+          3. Go to Extensions (Ctrl/Cmd+Shift+X)
+          4. Click "..." menu → "Install from VSIX..."
+          5. Select the downloaded file
+
+          ## Usage
+          1. Create or open a \`.rule\` file
+          2. The custom editor will open automatically
+          3. Edit the rule name, file patterns, and content
+          4. Save as usual (Ctrl/Cmd+S)
+
+          ## Configuration
+          The extension can be easily configured for different file extensions by modifying the source code. See the repository documentation for details.
+
+                    ---
+          **Package Size:** ${PACKAGE_SIZE} (highly optimized)
+          **File Count:** ~14 files total
+          **Supported File Extensions:** *.rule
+          **VS Code Version:** ^1.85.0
+          **Performance:** Fast loading, minimal memory footprint
+          EOF
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.check_tag.outputs.version_tag }}
+          name: "Custom File Editor ${{ steps.check_tag.outputs.version_tag }}"
+          body_path: release_notes.md
+          files: |
+            ${{ steps.package_info.outputs.package_file }}
+          draft: false
+          prerelease: false
