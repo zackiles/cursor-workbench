@@ -32,11 +32,11 @@ jobs:
       - name: Install vsce (VS Code Extension Manager)
         run: npm install -g vsce
 
-      - name: Run local configuration tests
-        run: npm run test:local
-
       - name: Build extension
         run: npm run build
+
+      - name: Run local configuration tests
+        run: npm run test:local
 
       - name: Verify package creation
         run: npm run verify:package

@@ -14,8 +14,37 @@ const PACKAGE_FILE = 'cursor-workbench-0.0.1.vsix'
 
 console.log('🚀 Starting local release process...\n')
 
+// Helper function to check if a command exists
+function commandExists(command) {
+  try {
+    execSync(`which ${command}`, { stdio: 'ignore' })
+    return true
+  } catch {
+    return false
+  }
+}
+
+// Detect available editors
+const editors = []
+if (commandExists('code')) {
+  editors.push({ name: 'VS Code', command: 'code' })
+}
+if (commandExists('cursor')) {
+  editors.push({ name: 'Cursor', command: 'cursor' })
+}
+
+if (editors.length === 0) {
+  console.log('❌ Neither VS Code nor Cursor found in PATH')
+  console.log(
+    'Please install VS Code or Cursor and make sure they are available in your PATH'
+  )
+  process.exit(1)
+}
+
+console.log(`📋 Found editors: ${editors.map((e) => e.name).join(', ')}\n`)
+
 // Helper function to run commands with proper error handling
-function runCommand(command, description) {
+function runCommand(command, description, allowFail = false) {
   console.log(`📋 ${description}...`)
   try {
     const output = execSync(command, {
@@ -25,6 +54,10 @@ function runCommand(command, description) {
     console.log(`✅ ${description} completed`)
     return output
   } catch (error) {
+    if (allowFail) {
+      console.log(`⚠️  ${description} failed (continuing anyway)`)
+      return null
+    }
     console.log(`❌ ${description} failed:`)
     console.log(error.stdout || error.message)
     if (error.stderr) {
@@ -66,67 +99,105 @@ console.log(`✅ Package created: ${PACKAGE_FILE}`)
 const stats = fs.statSync(PACKAGE_FILE)
 console.log(`📦 Package size: ${(stats.size / 1024).toFixed(1)} KB`)
 
-// Step 4: Check if extension is currently installed
-console.log('\n🔍 Checking for existing installation...')
-try {
-  const installedExtensions = execSync('code --list-extensions', {
-    encoding: 'utf8'
-  })
-  if (installedExtensions.includes(EXTENSION_NAME)) {
-    console.log('📦 Found existing installation, uninstalling...')
-    runCommand(
-      `code --uninstall-extension ${EXTENSION_NAME}`,
-      'Uninstalling existing extension'
+// Step 4: Process each editor
+for (const editor of editors) {
+  console.log(`\n🔍 Processing ${editor.name}...`)
+
+  // Check if extension is currently installed
+  console.log(`🔍 Checking for existing installation in ${editor.name}...`)
+  try {
+    const installedExtensions = execSync(
+      `${editor.command} --list-extensions`,
+      {
+        encoding: 'utf8'
+      }
     )
+    if (installedExtensions.includes(EXTENSION_NAME)) {
+      console.log(
+        `📦 Found existing installation in ${editor.name}, uninstalling...`
+      )
+      runCommand(
+        `${editor.command} --uninstall-extension ${EXTENSION_NAME}`,
+        `Uninstalling existing extension from ${editor.name}`,
+        true
+      )
 
-    // Wait a moment for uninstall to complete
-    console.log('⏳ Waiting for uninstall to complete...')
-    // Using child_process to create a synchronous delay
-    execSync('sleep 2', { stdio: 'ignore' })
-  } else {
-    console.log('✅ No existing installation found')
+      // Wait a moment for uninstall to complete
+      console.log('⏳ Waiting for uninstall to complete...')
+      execSync('sleep 2', { stdio: 'ignore' })
+    } else {
+      console.log(`✅ No existing installation found in ${editor.name}`)
+    }
+  } catch (error) {
+    console.log(
+      `⚠️  Could not check existing installations in ${editor.name}:`,
+      error.message
+    )
   }
-} catch (error) {
-  console.log('⚠️  Could not check existing installations:', error.message)
+
+  // Install the new extension
+  runCommand(
+    `${editor.command} --install-extension ${PACKAGE_FILE}`,
+    `Installing extension in ${editor.name}`
+  )
+
+  // Verify installation
+  console.log(`🔍 Verifying installation in ${editor.name}...`)
+  try {
+    const installedExtensions = execSync(
+      `${editor.command} --list-extensions`,
+      {
+        encoding: 'utf8'
+      }
+    )
+    if (installedExtensions.includes(EXTENSION_NAME)) {
+      console.log(
+        `✅ Extension successfully installed and verified in ${editor.name}`
+      )
+    } else {
+      console.log(
+        `❌ Extension installation could not be verified in ${editor.name}`
+      )
+      console.log(`Please check ${editor.name} and try manual installation`)
+    }
+  } catch (error) {
+    console.log(
+      `⚠️  Could not verify installation in ${editor.name}:`,
+      error.message
+    )
+  }
 }
 
-// Step 5: Install the new extension
-runCommand(`code --install-extension ${PACKAGE_FILE}`, 'Installing extension')
+// Step 5: Show installation summary
+console.log('\n📋 Installation Summary:')
+console.log(`   Extension ID: ${EXTENSION_NAME}`)
+console.log(`   Package File: ${PACKAGE_FILE}`)
+console.log('   File Extensions: *.rule')
+console.log(`   Installed in: ${editors.map((e) => e.name).join(', ')}`)
 
-// Step 6: Verify installation
-console.log('\n🔍 Verifying installation...')
-try {
-  const installedExtensions = execSync('code --list-extensions', {
-    encoding: 'utf8'
-  })
-  if (installedExtensions.includes(EXTENSION_NAME)) {
-    console.log('✅ Extension successfully installed and verified')
-
-    // Show extension details
-    console.log('\n📋 Installation Details:')
-    console.log(`   Extension ID: ${EXTENSION_NAME}`)
-    console.log(`   Package File: ${PACKAGE_FILE}`)
-    console.log('   File Extensions: *.rule')
-  } else {
-    console.log('❌ Extension installation could not be verified')
-    console.log('Please check VS Code and try manual installation')
-    process.exit(1)
-  }
-} catch (error) {
-  console.log('⚠️  Could not verify installation:', error.message)
-}
-
-// Step 7: Provide next steps
+// Step 6: Provide next steps
 console.log('\n🎉 Local release completed successfully!')
 console.log('\n📝 Next Steps:')
-console.log('1. Open or create a .rule file in VS Code')
+console.log('1. Open or create a .rule file in VS Code or Cursor')
 console.log('2. The custom editor should open automatically')
 console.log('3. Test the front matter fields and content editing')
 console.log('\n💡 Useful Commands:')
-console.log(
-  '   List extensions: code --list-extensions | grep cursor-workbench'
-)
-console.log(`   Uninstall: code --uninstall-extension ${EXTENSION_NAME}`)
+if (editors.find((e) => e.command === 'code')) {
+  console.log(
+    '   List extensions (VS Code): code --list-extensions | grep cursor-workbench'
+  )
+  console.log(
+    `   Uninstall (VS Code): code --uninstall-extension ${EXTENSION_NAME}`
+  )
+}
+if (editors.find((e) => e.command === 'cursor')) {
+  console.log(
+    '   List extensions (Cursor): cursor --list-extensions | grep cursor-workbench'
+  )
+  console.log(
+    `   Uninstall (Cursor): cursor --uninstall-extension ${EXTENSION_NAME}`
+  )
+}
 console.log('   Development: npm run dev (for watch mode)')
 
 // Clean up: optionally remove the .vsix file
