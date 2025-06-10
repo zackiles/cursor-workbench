@@ -103,37 +103,19 @@ console.log(`📦 Package size: ${(stats.size / 1024).toFixed(1)} KB`)
 for (const editor of editors) {
   console.log(`\n🔍 Processing ${editor.name}...`)
 
-  // Check if extension is currently installed
-  console.log(`🔍 Checking for existing installation in ${editor.name}...`)
-  try {
-    const installedExtensions = execSync(
-      `${editor.command} --list-extensions`,
-      {
-        encoding: 'utf8'
-      }
-    )
-    if (installedExtensions.includes(EXTENSION_NAME)) {
-      console.log(
-        `📦 Found existing installation in ${editor.name}, uninstalling...`
-      )
-      runCommand(
-        `${editor.command} --uninstall-extension ${EXTENSION_NAME}`,
-        `Uninstalling existing extension from ${editor.name}`,
-        true
-      )
+  // Always attempt to uninstall first to ensure clean installation
+  console.log(
+    `🧹 Attempting to uninstall any existing installation in ${editor.name}...`
+  )
+  runCommand(
+    `${editor.command} --uninstall-extension ${EXTENSION_NAME}`,
+    `Uninstalling existing extension from ${editor.name} (if present)`,
+    true
+  )
 
-      // Wait a moment for uninstall to complete
-      console.log('⏳ Waiting for uninstall to complete...')
-      execSync('sleep 2', { stdio: 'ignore' })
-    } else {
-      console.log(`✅ No existing installation found in ${editor.name}`)
-    }
-  } catch (error) {
-    console.log(
-      `⚠️  Could not check existing installations in ${editor.name}:`,
-      error.message
-    )
-  }
+  // Wait a moment for uninstall to complete
+  console.log('⏳ Waiting for uninstall to complete...')
+  execSync('sleep 2', { stdio: 'ignore' })
 
   // Install the new extension
   runCommand(

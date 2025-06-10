@@ -8,12 +8,22 @@
     "vscode": "^1.85.0"
   },
   "categories": [
-    "Other"
+    "Cursor",
+    "AI",
+    "Agentic AI",
+    "Claude Code",
+    "Windsurf"
   ],
   "activationEvents": [
     "onCustomEditor:customFileEditor"
   ],
   "main": "./bin/main.js",
+  "enabledApiProposals": [
+    "cursor",
+    "control",
+    "externalUriOpener",
+    "resolvers"
+  ],
   "contributes": {
     "customEditors": [
       {
@@ -26,7 +36,54 @@
         ],
         "priority": "default"
       }
-    ]
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "rulesExplorer",
+          "name": "Cursor Workbench",
+          "when": "workspaceFolderCount > 0"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "rulesExplorer.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "rulesExplorer.settings",
+        "title": "Settings",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "rulesExplorer.syncFile",
+        "title": "Sync File",
+        "icon": "$(sync)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "rulesExplorer.refresh",
+          "when": "view == rulesExplorer",
+          "group": "navigation@1"
+        },
+        {
+          "command": "rulesExplorer.settings",
+          "when": "view == rulesExplorer",
+          "group": "navigation@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "rulesExplorer.syncFile",
+          "when": "view == rulesExplorer && viewItem == ruleFile",
+          "group": "inline"
+        }
+      ]
+    }
   },
   "scripts": {
     "build": "node build.js",
@@ -52,9 +109,15 @@
     "url": "https://github.com/zackiles/cursor-workbench/issues"
   },
   "homepage": "https://github.com/zackiles/cursor-workbench#readme",
-  "dependencies": {},
+  "dependencies": {
+    "@mdxeditor/editor": "^3.35.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
   "devDependencies": {
     "@types/node": "^20.12.12",
+    "@types/react": "^19.1.6",
+    "@types/react-dom": "^19.1.6",
     "@types/vscode": "^1.85.0",
     "esbuild": "^0.19.12",
     "typescript": "^5.4.5",
