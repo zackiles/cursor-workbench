@@ -1,16 +1,8 @@
 import React, { useEffect, useState } from 'react'
-
-interface VSCodeAPI {
-  postMessage: (message: unknown) => void
-}
+import type { VSCodeAPI, RegistryState } from '../../common/types'
 
 interface GeneralTabProps {
   vscode: VSCodeAPI
-}
-
-interface RegistryState {
-  userRegistry: string | null
-  teamRegistry: string | null
 }
 
 export const GeneralTab = ({ vscode }: GeneralTabProps) => {

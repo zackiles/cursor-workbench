@@ -2,7 +2,7 @@
 
 ## Overview
 
-The VS Code extension has been successfully updated to use MDX Editor for editing `.rule` files with YAML frontmatter and markdown content. The integration provides a rich markdown editing experience with frontmatter support.
+The Cursor Workbench VS Code extension has been successfully updated to use MDX Editor for editing `.rule` files with YAML frontmatter and markdown content. The integration provides a rich markdown editing experience with frontmatter support.
 
 ## Features
 
@@ -44,22 +44,39 @@ Full markdown support including:
 ### Architecture
 ```
 Extension Host (Node.js)
-├── CustomFileEditorProvider.ts    # Main editor provider
-├── CustomFileDocument.ts          # Document parsing
-└── webview/                       # React components
-    ├── index.tsx                  # Entry point
-    └── RuleEditor.tsx             # Main MDX Editor component
+├── src/extension.ts                      # Extension entry point
+├── src/editor/
+│   ├── RuleEditorProvider.ts             # Main editor provider
+│   └── RuleDocument.ts                   # Document parsing
+├── src/explorer/
+│   └── RulesTreeProvider.ts              # File tree provider
+├── src/settings/
+│   └── SettingsProvider.ts               # Settings webview provider
+├── src/common/
+│   ├── logger.ts                         # Logging utility
+│   ├── types.ts                          # Shared interfaces
+│   └── utils.ts                          # Common utilities
+└── src/webviews/                         # React components (Browser context)
+    ├── main.tsx                          # Webview entry point
+    ├── rule-editor/
+    │   ├── RuleEditor.tsx                # Main MDX Editor component
+    │   └── RuleEditor.css                # Editor styles
+    ├── settings/
+    │   ├── Settings.tsx                  # Settings component
+    │   └── (other settings components)
+    └── styles/
+        └── base.css                      # Base webview styles
 ```
 
 ### Build System
-- **Extension Bundle**: `src/main.ts` → `bin/main.js` (Node.js/CommonJS)
-- **Webview Bundle**: `src/webview/index.tsx` → `bin/webview.js` (Browser/IIFE)
+- **Extension Bundle**: `src/extension.ts` → `bin/extension.js` (Node.js/CommonJS)
+- **Webview Bundle**: `src/webviews/main.tsx` → `bin/webview.js` (Browser/IIFE)
 - **React & JSX**: Full TypeScript support with React 19
 - **MDX Editor CSS**: Embedded directly in the HTML for styling
 
 ### Data Flow
 1. VS Code reads `.rule` file
-2. `CustomFileDocument` parses frontmatter and content
+2. `RuleDocument` parses frontmatter and content
 3. Data sent to React webview via `postMessage`
 4. MDX Editor renders with frontmatter plugin
 5. Changes flow back through `postMessage` to update file
@@ -105,9 +122,9 @@ npm run dev:install    # Build, package, and install locally
 
 ### Extending
 The editor can be extended by:
-- Adding more frontmatter fields in `CustomFileDocument.ts`
-- Adding MDX Editor plugins in `RuleEditor.tsx`
-- Customizing styling in `CustomFileEditorProvider.ts`
+- Adding more frontmatter fields in `src/editor/RuleDocument.ts`
+- Adding MDX Editor plugins in `src/webviews/rule-editor/RuleEditor.tsx`
+- Customizing styling in `src/webviews/rule-editor/RuleEditor.css`
 
 ## Dependencies
 
@@ -125,16 +142,33 @@ The editor can be extended by:
 The editor behavior can be customized by modifying:
 
 ### File Extensions
-Change `TARGET_FILE_EXTENSION` in `customFileEditorProvider.ts`:
-```typescript
-const TARGET_FILE_EXTENSION = '*.rule'  // Change to your extension
+Change the file pattern in `package.json`:
+```json
+{
+  "contributes": {
+    "customEditors": [
+      {
+        "selector": [
+          {
+            "filenamePattern": "*.rule"  // Change to your extension
+          }
+        ]
+      }
+    ]
+  }
+}
 ```
 
 ### Frontmatter Fields
-Update parsing logic in `CustomFileDocument.ts` and `RuleEditor.tsx` to support additional fields.
+Update parsing logic in:
+- `src/editor/RuleDocument.ts` - Document parsing
+- `src/webviews/rule-editor/RuleEditor.tsx` - React component
+- `src/common/types.ts` - TypeScript interfaces
 
 ### Styling
-Modify CSS in `getHtmlForWebview()` to customize appearance.
+Modify CSS in:
+- `src/webviews/rule-editor/RuleEditor.css` - Editor-specific styles
+- `src/webviews/styles/base.css` - Base webview styles
 
 ## Troubleshooting
 

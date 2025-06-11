@@ -7,11 +7,13 @@ tsconfig.json
 *.ts
 
 # Build and development files
-build.js
 scripts/**
 test/**
 docs/**
 .vscode/**
+
+# Distribution directory (where .vsix files are stored)
+dist/**
 
 # Dependencies (should be bundled, not included as separate files)
 node_modules/**

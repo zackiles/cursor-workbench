@@ -1,14 +1,14 @@
 import * as vscode from 'vscode'
-import { CustomFileEditorProvider } from './customFileEditorProvider'
-import { RulesTreeProvider } from './rulesTreeProvider'
-import { createSettingsWebview } from './settingsWebviewProvider'
-import { logger } from './logger'
+import { RuleEditorProvider } from './editor/RuleEditorProvider'
+import { RulesTreeProvider } from './explorer/RulesTreeProvider'
+import { createSettingsWebview } from './settings/SettingsProvider'
+import { logger } from './common/logger'
 
 export function activate(context: vscode.ExtensionContext) {
   logger.log('Activating Cursor Workbench extension')
 
   // Register the custom text editor provider for custom files
-  const providerRegistration = CustomFileEditorProvider.register(context)
+  const providerRegistration = RuleEditorProvider.register(context)
   context.subscriptions.push(providerRegistration)
 
   // Get workspace root

@@ -1,6 +1,6 @@
-@import './styles/base.css';
+@import '../styles/base.css';
 @import '@mdxeditor/editor/style.css';
-@import '../settings/settings.css';
+@import '../settings/Settings.css';
 
 /* Rule Editor Styles */
 .rule-editor {

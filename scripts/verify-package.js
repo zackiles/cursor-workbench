@@ -7,10 +7,17 @@
 
 const { execSync } = require('node:child_process')
 const fs = require('node:fs')
+const path = require('node:path')
 
-const PACKAGE_FILE = 'cursor-workbench-0.0.1.vsix'
+const PACKAGE_FILE = path.join('dist', 'cursor-workbench-0.0.1.vsix')
 
 console.log('📋 Verifying package creation...\n')
+
+// Ensure dist directory exists
+if (!fs.existsSync('dist')) {
+  fs.mkdirSync('dist', { recursive: true })
+  console.log('📁 Created dist directory')
+}
 
 // Clean previous package
 if (fs.existsSync(PACKAGE_FILE)) {

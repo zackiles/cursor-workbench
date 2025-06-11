@@ -1,12 +1,9 @@
 import { useState } from 'react'
+import type { VSCodeAPI } from '../../common/types'
 import { GeneralTab } from './GeneralTab'
 import { DebugTab } from './DebugTab'
 import { DocsTab } from './DocsTab'
-import './settings.css'
-
-interface VSCodeAPI {
-  postMessage: (message: unknown) => void
-}
+import './Settings.css'
 
 interface SettingsProps {
   vscode: VSCodeAPI

@@ -3,29 +3,11 @@ import {
   MDXEditor,
   markdownShortcutPlugin,
 } from '@mdxeditor/editor'
+import type { VSCodeAPI, DocumentData, FrontmatterData } from '../../common/types'
 import './RuleEditor.css'
-
-interface VSCodeAPI {
-  postMessage: (message: unknown) => void
-}
 
 interface RuleEditorProps {
   vscode: VSCodeAPI
-}
-
-interface DocumentData {
-  rule: string
-  globs: string
-  content: string
-  filePath?: string
-  workspaceRoot?: string
-}
-
-interface FrontmatterData {
-  rule: string
-  globs: string
-  description: string
-  notes: string
 }
 
 export const RuleEditor = ({ vscode }: RuleEditorProps) => {

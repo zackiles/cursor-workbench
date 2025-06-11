@@ -1,22 +1,20 @@
 import * as vscode from 'vscode'
-import * as fs from 'node:fs'
 import * as path from 'node:path'
-import { CustomFileDocument } from './customFileDocument'
-import { logger } from './logger'
-import { createSettingsWebview } from './settingsWebviewProvider'
+import { RuleDocument } from './RuleDocument'
+import { logger } from '../common/logger'
+import { getNonce } from '../common/utils'
+import { createSettingsWebview } from '../settings/SettingsProvider'
 
 // File extension configuration - change this to update the supported file extension
-const TARGET_FILE_EXTENSION = '*.rule'
+//const TARGET_FILE_EXTENSION = '*.rule'
 const EDITOR_VIEW_TYPE = 'customFileEditor'
 const EDITOR_DISPLAY_NAME = 'Custom File Editor'
 
-export class CustomFileEditorProvider
-  implements vscode.CustomTextEditorProvider
-{
+export class RuleEditorProvider implements vscode.CustomTextEditorProvider {
   public static register(context: vscode.ExtensionContext): vscode.Disposable {
-    const provider = new CustomFileEditorProvider(context)
+    const provider = new RuleEditorProvider(context)
     const providerRegistration = vscode.window.registerCustomEditorProvider(
-      CustomFileEditorProvider.viewType,
+      RuleEditorProvider.viewType,
       provider
     )
     return providerRegistration
@@ -38,8 +36,8 @@ export class CustomFileEditorProvider
 
     webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview)
 
-    const customDocument = new CustomFileDocument(document)
-    logger.log('CustomFileDocument created', {
+    const customDocument = new RuleDocument(document)
+    logger.log('RuleDocument created', {
       rule: customDocument.rule,
       globs: customDocument.globs,
       content: customDocument.content
@@ -110,7 +108,7 @@ export class CustomFileEditorProvider
         if (e.document.uri.toString() === document.uri.toString()) {
           this.updateWebview(
             webviewPanel,
-            new CustomFileDocument(document),
+            new RuleDocument(document),
             document.uri
           )
         }
@@ -153,7 +151,7 @@ export class CustomFileEditorProvider
 
   private updateWebview(
     panel: vscode.WebviewPanel,
-    customDocument: CustomFileDocument,
+    customDocument: RuleDocument,
     documentUri: vscode.Uri
   ) {
     // Get workspace root
@@ -204,14 +202,4 @@ globs: ${globs}
 
 ${content}`
   }
-}
-
-function getNonce() {
-  let text = ''
-  const possible =
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-  for (let i = 0; i < 32; i++) {
-    text += possible.charAt(Math.floor(Math.random() * possible.length))
-  }
-  return text
 }

@@ -1,32 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-
-interface VSCodeAPI {
-  postMessage: (message: unknown) => void
-}
+import type { VSCodeAPI, LogEntry, ExtensionInfo, ExtensionInfoResponse } from '../../common/types'
 
 interface DebugTabProps {
   vscode: VSCodeAPI
-}
-
-interface LogEntry {
-  id: string
-  timestamp: string
-  level: 'info' | 'debug' | 'warn' | 'error'
-  message: string
-  data?: unknown
-}
-
-interface ExtensionInfo {
-  id: string
-  isBuiltin: boolean
-  path: string
-  exports: string[]
-  packageInfo?: unknown
-}
-
-interface ExtensionInfoResponse {
-  cursorExtensions: ExtensionInfo[]
-  allExtensions: ExtensionInfo[]
 }
 
 export const DebugTab = ({ vscode }: DebugTabProps) => {

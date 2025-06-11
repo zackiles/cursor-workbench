@@ -1,6 +1,6 @@
 import type * as vscode from 'vscode'
 
-export class CustomFileDocument {
+export class RuleDocument {
   public readonly rule: string
   public readonly globs: string
   public readonly content: string

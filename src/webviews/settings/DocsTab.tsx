@@ -1,8 +1,5 @@
 import React from 'react'
-
-interface VSCodeAPI {
-  postMessage: (message: unknown) => void
-}
+import type { VSCodeAPI } from '../../common/types'
 
 interface DocsTabProps {
   vscode: VSCodeAPI

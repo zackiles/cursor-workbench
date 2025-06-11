@@ -1,6 +1,6 @@
 # Development Guide
 
-This guide explains how to develop and test the Custom File Editor VS Code extension locally.
+This guide explains how to develop and test the Cursor Workbench VS Code extension locally.
 
 ## Prerequisites
 
@@ -10,9 +10,26 @@ This guide explains how to develop and test the Custom File Editor VS Code exten
 
 ## Local Development & Testing
 
-### Method 1: Extension Development Host (Recommended)
+### Method 1: Hot Reload Development (Recommended)
 
-This is the standard VS Code extension development approach:
+For the best development experience with automatic rebuilding and reloading:
+
+1. **Start hot reload mode**
+   ```bash
+   npm run hot-reload
+   ```
+   This will:
+   - Automatically rebuild the extension when files change
+   - Automatically reload the VS Code window after rebuilding
+   - Provide immediate feedback for your changes
+
+2. **Open a test project in a separate VS Code window**
+   - Create or open a folder with `.rule` files
+   - The custom editor will update automatically as you make changes
+
+### Method 2: Extension Development Host
+
+The standard VS Code extension development approach:
 
 1. **Open the project in VS Code**
    ```bash
@@ -34,7 +51,7 @@ This is the standard VS Code extension development approach:
    - Press `Ctrl/Cmd+Shift+F5` to reload the Extension Development Host window
    - Or use Command Palette: `Developer: Reload Window` in the Extension Development Host
 
-### Method 2: Watch Mode Development
+### Method 3: Watch Mode Development
 
 For continuous development with automatic rebuilding:
 
@@ -48,7 +65,7 @@ For continuous development with automatic rebuilding:
    - Use `F5` or the debug configuration as above
    - The extension will use the latest built version
 
-### Method 3: Package and Install Locally
+### Method 4: Package and Install Locally
 
 To test the extension as an installed extension:
 
@@ -111,25 +128,49 @@ When testing the extension, verify these features:
 
 ```
 src/
-├── main.ts                      # Extension entry point
-├── customFileEditorProvider.ts  # Main editor provider logic
-└── customFileDocument.ts        # Document parsing logic
+├── extension.ts                    # Extension entry point
+├── common/
+│   ├── logger.ts                   # Shared logging utility
+│   ├── types.ts                    # Common TypeScript interfaces
+│   └── utils.ts                    # Common utility functions
+├── editor/
+│   ├── RuleDocument.ts             # Document parsing logic
+│   └── RuleEditorProvider.ts       # Main editor provider logic
+├── explorer/
+│   └── RulesTreeProvider.ts        # File tree view provider
+├── settings/
+│   └── SettingsProvider.ts         # Settings webview provider
+└── webviews/
+    ├── main.tsx                    # Webview entry point
+    ├── styles/
+    │   └── base.css                # Base webview styles
+    ├── rule-editor/
+    │   ├── RuleEditor.tsx          # Rule editor React component
+    │   └── RuleEditor.css          # Rule editor styles
+    └── settings/
+        ├── Settings.tsx            # Settings React component
+        ├── Settings.css            # Settings styles
+        ├── GeneralTab.tsx          # General settings tab
+        ├── DebugTab.tsx            # Debug settings tab
+        └── DocsTab.tsx             # Documentation tab
 
 .vscode/
-├── launch.json                  # Debug configurations
-└── tasks.json                   # Build tasks
+├── launch.json                     # Debug configurations
+└── tasks.json                      # Build tasks
 
-bin/                             # Compiled output (generated)
-└── main.js                      # Compiled extension
+bin/                                # Compiled output (generated)
+├── extension.js                    # Compiled extension
+├── webview.js                      # Compiled webview bundle
+└── webview.css                     # Compiled styles
 
-test.rule                        # Sample test file
+test.rule                           # Sample test file
 ```
 
 ## Changing File Extensions
 
 To test with different file extensions:
 
-1. Update `TARGET_FILE_EXTENSION` in `src/customFileEditorProvider.ts`
+1. Update the file pattern in `src/editor/RuleEditorProvider.ts`
 2. Update `filenamePattern` in `package.json`
 3. Rebuild: `npm run build`
 4. Reload the Extension Development Host
@@ -140,3 +181,22 @@ To test with different file extensions:
 - **Custom editor not opening**: Verify file extension matches configuration
 - **Changes not reflecting**: Make sure to reload the Extension Development Host after code changes
 - **Build errors**: Check TypeScript compilation errors in the terminal
+
+## Development Workflow
+
+### Making Changes to Extension Logic
+1. Edit files in `src/editor/`, `src/explorer/`, or `src/settings/`
+2. Run `npm run build` or `npm run watch`
+3. Reload Extension Development Host (`Ctrl/Cmd+Shift+F5`)
+
+### Making Changes to Webview Components
+1. Edit React components in `src/webviews/`
+2. Run `npm run build` or `npm run watch`
+3. Reload Extension Development Host
+
+### Adding New Features
+1. Add backend logic to appropriate feature directory
+2. Add webview components if needed
+3. Update `src/extension.ts` to register new providers
+4. Update `package.json` for new contributions
+5. Test in Extension Development Host

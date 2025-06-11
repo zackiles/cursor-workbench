@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
-import { logger } from './logger'
+import { logger } from '../common/logger'
+import { getNonce } from '../common/utils'
 
 let currentPanel: vscode.WebviewPanel | undefined
 
@@ -316,14 +317,4 @@ function getHtmlForWebview(
               <script nonce="${nonce}" src="${webviewUri}"></script>
           </body>
           </html>`
-}
-
-function getNonce(): string {
-  let text = ''
-  const possible =
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-  for (let i = 0; i < 32; i++) {
-    text += possible.charAt(Math.floor(Math.random() * possible.length))
-  }
-  return text
 }

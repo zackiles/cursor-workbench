@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
-import { logger } from './logger'
+import { logger } from '../common/logger'
 
 export class RulesTreeItem extends vscode.TreeItem {
   constructor(

@@ -17,7 +17,7 @@
   "activationEvents": [
     "onCustomEditor:customFileEditor"
   ],
-  "main": "./bin/main.js",
+  "main": "./bin/extension.js",
   "enabledApiProposals": [
     "cursor",
     "control",
@@ -86,15 +86,16 @@
     }
   },
   "scripts": {
-    "build": "node build.js",
-    "watch": "node build.js --watch",
+    "build": "node scripts/build.js",
+    "watch": "node scripts/build.js --watch",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "package": "vsce package",
+    "package": "vsce package --out dist/cursor-workbench-0.0.1.vsix",
     "vscode:prepublish": "npm run build",
     "dev": "npm run watch",
+    "hot-reload": "node scripts/build.js --watch --auto-reload",
     "test:local": "node scripts/test-local.js",
     "verify:package": "node scripts/verify-package.js",
-    "install:local": "code --install-extension cursor-workbench-0.0.1.vsix",
+    "install:local": "code --install-extension dist/cursor-workbench-0.0.1.vsix",
     "uninstall-extension": "code --uninstall-extension cursor-workbench.cursor-workbench",
     "release:local": "node scripts/release-local.js",
     "dev:install": "npm run build && npm run package && npm run install:local"

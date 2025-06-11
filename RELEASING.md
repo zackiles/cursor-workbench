@@ -1,6 +1,6 @@
 # Releasing & Local Installation Guide
 
-This guide explains how to build, package, and install the Custom File Editor extension locally on your desktop VS Code installation without using the official marketplace.
+This guide explains how to build, package, and install the Cursor Workbench extension locally on your desktop VS Code installation without using the official marketplace.
 
 ## Prerequisites
 

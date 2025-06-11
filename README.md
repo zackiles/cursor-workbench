@@ -1,6 +1,6 @@
-# Custom File Editor - VS Code Extension
+# Cursor Workbench - VS Code Extension
 
-A generic VS Code extension for editing files with YAML front matter and content. Designed to be easily configurable for different file extensions and use cases.
+A VS Code extension for editing files with YAML front matter and content. Provides a custom editor, file explorer view, and settings management. Designed to support rule files and other structured content.
 
 ## Features
 
@@ -113,9 +113,23 @@ npm run verify:package
 
 ```
 ├── src/
-│   ├── main.ts                      # Extension entry point
-│   ├── customFileEditorProvider.ts  # Main editor logic
-│   └── customFileDocument.ts        # File parsing logic
+│   ├── extension.ts                 # Extension entry point
+│   ├── common/
+│   │   ├── logger.ts                # Shared logging utility
+│   │   ├── types.ts                 # Common TypeScript interfaces
+│   │   └── utils.ts                 # Common utility functions
+│   ├── editor/
+│   │   ├── RuleDocument.ts          # Document parsing logic
+│   │   └── RuleEditorProvider.ts    # Main editor provider
+│   ├── explorer/
+│   │   └── RulesTreeProvider.ts     # File tree view provider
+│   ├── settings/
+│   │   └── SettingsProvider.ts      # Settings webview provider
+│   └── webviews/
+│       ├── main.tsx                 # Webview entry point
+│       ├── rule-editor/             # Rule editor React components
+│       ├── settings/                # Settings React components
+│       └── styles/                  # Webview CSS styles
 ├── .vscode/                         # VS Code configuration
 ├── test/                           # Test files
 ├── scripts/                        # Build and test scripts
@@ -179,3 +193,72 @@ For maintainers: See [docs/VERSIONING.md](./docs/VERSIONING.md) for release crea
 - ⚡ [Optimization Guide](./docs/OPTIMIZATION.md)
 - 📋 [Latest Release](../../releases/latest)
 - 🐛 [Report Issues](../../issues)
+
+# Project Structure and Best Practices
+
+This extension follows best practices for VS Code extension development:
+
+## Directory Structure
+
+```
+cursor-workbench/
+├── bin/                   # Compiled output (generated, gitignored)
+├── dist/                  # Distribution files (.vsix packages, gitignored)
+├── docs/                  # Documentation files
+├── scripts/               # Build and utility scripts
+│   ├── build.js           # Build script for the extension
+│   ├── release-local.js   # Local release script
+│   ├── test-local.js      # Simple tests
+│   └── verify-package.js  # Package verification
+├── src/                   # Source code
+│   ├── common/            # Shared utilities
+│   ├── editor/            # Editor implementation
+│   ├── explorer/          # Explorer view
+│   ├── settings/          # Settings implementation
+│   └── webviews/          # Webview components
+├── test/                  # Test files
+├── .env.example           # Example environment variables
+├── biome.json             # Biome configuration
+├── CHANGELOG.md           # Changelog
+├── package.json           # Extension manifest
+├── README.md              # Project documentation
+├── test.rule              # Sample rule file
+└── tsconfig.json          # TypeScript configuration
+```
+
+## Development Workflow
+
+1. **Hot Reload Development** (Recommended):
+   ```bash
+   npm run hot-reload
+   ```
+   This will automatically rebuild the extension when files change and reload VS Code.
+
+2. **Build and Package**:
+   ```bash
+   npm run build         # Build the extension
+   npm run package       # Package as .vsix
+   npm run dev:install   # Build, package and install locally
+   ```
+
+3. **Testing**:
+   ```bash
+   npm run test:local    # Run basic tests
+   npm run verify:package # Verify packaging works
+   ```
+
+## Release Process
+
+The extension uses semantic versioning. Packages are created in the `dist/` directory:
+
+```bash
+npm run release:local   # Full local release process
+```
+
+This script builds, packages, and installs the extension in both VS Code and Cursor (if available).
+
+For publishing to the marketplace, use:
+
+```bash
+vsce publish           # Requires marketplace publisher access
+```

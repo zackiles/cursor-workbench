@@ -11,3 +11,7 @@ pids
 *.log
 .env
 node_modules
+
+/bin/
+/dist/
+*.vsix

@@ -10,7 +10,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 
 const EXTENSION_NAME = 'cursor-workbench.cursor-workbench'
-const PACKAGE_FILE = 'cursor-workbench-0.0.1.vsix'
+const PACKAGE_FILE = path.join('dist', 'cursor-workbench-0.0.1.vsix')
 
 console.log('🚀 Starting local release process...\n')
 
@@ -73,6 +73,12 @@ try {
   if (fs.existsSync('bin')) {
     fs.rmSync('bin', { recursive: true, force: true })
     console.log('✅ Cleaned bin directory')
+  }
+
+  // Ensure dist directory exists
+  if (!fs.existsSync('dist')) {
+    fs.mkdirSync('dist', { recursive: true })
+    console.log('📁 Created dist directory')
   }
 
   if (fs.existsSync(PACKAGE_FILE)) {

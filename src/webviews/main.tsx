@@ -1,6 +1,6 @@
 import { createRoot } from 'react-dom/client'
-import { RuleEditor } from './RuleEditor'
-import { Settings } from '../settings'
+import { RuleEditor } from './rule-editor/RuleEditor'
+import { Settings } from './settings/Settings'
 
 // VS Code API
 interface VSCodeAPI {
