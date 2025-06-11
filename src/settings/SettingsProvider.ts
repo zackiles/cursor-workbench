@@ -4,6 +4,27 @@ import { getNonce } from '../common/utils'
 
 let currentPanel: vscode.WebviewPanel | undefined
 
+// Function to refresh the existing settings webview if it exists
+export function refreshSettingsWebview(context: vscode.ExtensionContext): void {
+  if (currentPanel) {
+    logger.log('Refreshing existing settings webview')
+    // Update the HTML content with a new timestamp to bust cache
+    currentPanel.webview.html = getHtmlForWebview(currentPanel.webview, context)
+
+    // Send a message to the webview that it should refresh its state
+    currentPanel.webview.postMessage({
+      type: 'refresh',
+      timestamp: Date.now()
+    })
+
+    return
+  }
+
+  // If no panel exists, create a new one
+  logger.log('No settings webview to refresh, creating new one')
+  createSettingsWebview(context)
+}
+
 export function createSettingsWebview(context: vscode.ExtensionContext): void {
   const column = vscode.window.activeTextEditor
     ? vscode.window.activeTextEditor.viewColumn
@@ -12,6 +33,8 @@ export function createSettingsWebview(context: vscode.ExtensionContext): void {
   // If we already have a panel, show it
   if (currentPanel) {
     currentPanel.reveal(column)
+    // Always refresh the HTML content to ensure latest CSS
+    currentPanel.webview.html = getHtmlForWebview(currentPanel.webview, context)
     return
   }
 
@@ -22,7 +45,8 @@ export function createSettingsWebview(context: vscode.ExtensionContext): void {
     column || vscode.ViewColumn.One,
     {
       enableScripts: true,
-      retainContextWhenHidden: true
+      localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'bin')],
+      retainContextWhenHidden: false // Set to false to ensure panel is fully recreated
     }
   )
 
@@ -279,7 +303,20 @@ export function createSettingsWebview(context: vscode.ExtensionContext): void {
   // Reset when the current panel is closed
   panel.onDidDispose(
     () => {
+      // Clean up panel resources and clear reference
       currentPanel = undefined
+
+      // Force garbage collection
+      if (global.gc) {
+        try {
+          global.gc()
+        } catch (e) {
+          logger.log('Failed to force garbage collection', e)
+        }
+      }
+
+      // Log panel disposal for debugging
+      logger.log('Settings panel disposed')
     },
     null,
     context.subscriptions
@@ -291,6 +328,7 @@ function getHtmlForWebview(
   context: vscode.ExtensionContext
 ): string {
   const nonce = getNonce()
+  const timestamp = Date.now() // Add timestamp for cache busting
 
   // Get the webview bundle URI
   const webviewUri = webview.asWebviewUri(
@@ -307,14 +345,25 @@ function getHtmlForWebview(
               <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-${nonce}'; style-src ${webview.cspSource};">
               <meta name="viewport" content="width=device-width, initial-scale=1.0">
               <title>Cursor Workbench Settings</title>
-              <link href="${stylesUri}" rel="stylesheet">
+              <link href="${stylesUri}?v=${timestamp}&cache=false" rel="stylesheet">
           </head>
           <body>
               <div id="root"></div>
               <script nonce="${nonce}">
                   window.WEBVIEW_TYPE = 'settings';
+                  // Log CSS loading for debugging
+                  console.log('Loading CSS from: ${stylesUri}?v=${timestamp}');
+                  // Add development reload helper
+                  window.DEV_RELOAD = function() {
+                      console.log('🔄 Reloading CSS...');
+                      const links = document.querySelectorAll('link[rel="stylesheet"]');
+                      links.forEach(link => {
+                          const href = link.href.split('?')[0];
+                          link.href = href + '?v=' + Date.now() + '&cache=false';
+                      });
+                  };
               </script>
-              <script nonce="${nonce}" src="${webviewUri}"></script>
+              <script nonce="${nonce}" src="${webviewUri}?v=${timestamp}"></script>
           </body>
           </html>`
 }

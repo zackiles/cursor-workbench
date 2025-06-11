@@ -8,11 +8,11 @@
     "vscode": "^1.85.0"
   },
   "categories": [
-    "Cursor",
     "AI",
-    "Agentic AI",
-    "Claude Code",
-    "Windsurf"
+    "Debuggers",
+    "Linters",
+    "Machine Learning",
+    "Other"
   ],
   "activationEvents": [
     "onCustomEditor:customFileEditor"
@@ -61,6 +61,19 @@
         "command": "rulesExplorer.syncFile",
         "title": "Sync File",
         "icon": "$(sync)"
+      },
+      {
+        "command": "rulesExplorer.refreshSettings",
+        "title": "Refresh Settings View",
+        "icon": "$(refresh)"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "rulesExplorer.refreshSettings",
+        "key": "ctrl+shift+r",
+        "mac": "cmd+shift+r",
+        "when": "activeWebviewPanelId == 'cursorWorkbenchSettings'"
       }
     ],
     "menus": {
@@ -86,19 +99,10 @@
     }
   },
   "scripts": {
-    "build": "node scripts/build.js",
-    "watch": "node scripts/build.js --watch",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "package": "vsce package --out dist/cursor-workbench-0.0.1.vsix",
-    "vscode:prepublish": "npm run build",
-    "dev": "npm run watch",
-    "hot-reload": "node scripts/build.js --watch --auto-reload",
-    "test:local": "node scripts/test-local.js",
-    "verify:package": "node scripts/verify-package.js",
-    "install:local": "code --install-extension dist/cursor-workbench-0.0.1.vsix",
-    "uninstall-extension": "code --uninstall-extension cursor-workbench.cursor-workbench",
-    "release:local": "node scripts/release-local.js",
-    "dev:install": "npm run build && npm run package && npm run install:local"
+    "build": "node scripts/build.js --production",
+    "test": "node scripts/build.js --dev && node scripts/test.js",
+    "dev": "node scripts/build.js --dev && open -a 'Visual Studio Code' --args --disable-extensions --extensionDevelopmentPath=\"$PWD\" \"$PWD\" & node scripts/build.js --dev --watch",
+    "dev:isolated": "node scripts/build.js --dev && code --disable-extensions --extensionDevelopmentPath=\"$PWD\" \"$PWD\""
   },
   "repository": {
     "type": "git",

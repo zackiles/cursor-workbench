@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { VSCodeAPI } from '../../common/types'
 import { GeneralTab } from './GeneralTab'
 import { DebugTab } from './DebugTab'
@@ -53,8 +53,39 @@ const tabs: TabConfig[] = [
 
 export const Settings = ({ vscode }: SettingsProps) => {
   const [activeTab, setActiveTab] = useState<TabType>('general')
+  // Add a key state to force re-render on refresh
+  const [renderKey, setRenderKey] = useState(Date.now())
 
-  console.log('Settings component mounting')
+  console.log('Settings component mounting with key:', renderKey)
+
+  // Listen for refresh messages from the extension
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      const message = event.data
+
+      if (message.type === 'refresh') {
+        console.log('Received refresh message from extension, refreshing component')
+        // Force re-render by updating the key
+        setRenderKey(Date.now())
+
+        // Also reload any CSS by creating a temporary link element
+        const linkEl = document.createElement('link')
+        linkEl.setAttribute('rel', 'stylesheet')
+        linkEl.setAttribute('href', `bin/webview.css?v=${Date.now()}`)
+
+        // Remove the link element after it loads
+        linkEl.onload = () => {
+          document.head.removeChild(linkEl)
+          console.log('Refreshed CSS loaded')
+        }
+
+        document.head.appendChild(linkEl)
+      }
+    }
+
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
+  }, [])
 
   const handleTabClick = (tabId: TabType) => {
     setActiveTab(tabId)
@@ -85,8 +116,9 @@ export const Settings = ({ vscode }: SettingsProps) => {
     }
   }
 
+  // Add key to the outer container to force full re-render when refresh happens
   return (
-    <div className="settings-layout">
+    <div className="settings-layout" key={renderKey}>
       {/* Left Sidebar */}
       <div className="sidebar">
         {tabs.map((tab, index) => (

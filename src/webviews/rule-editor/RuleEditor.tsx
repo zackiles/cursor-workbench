@@ -217,8 +217,6 @@ ${contentText}`
                      <div className="rule-details">
              <div className="rule-info-line">
                <strong>Rule: {fileName}</strong>
-               <span className="separator"> / </span>
-
              </div>
              <div className="scope-info-line">
                <code className="scope-info"><strong>Scope:</strong> {ruleKind} </code>
@@ -266,7 +264,7 @@ ${contentText}`
           </div>
         </div>
 
-        {frontmatter.rule === 'Auto Attached' && (
+        {frontmatter.rule === 'Auto' && (
           <div className="form-row form-row-flex">
             <label htmlFor="globs">File Patterns (Globs)</label>
             <input
@@ -280,7 +278,7 @@ ${contentText}`
           </div>
         )}
 
-        {frontmatter.rule === 'Agent Requested' && (
+        {frontmatter.rule === 'Agent' && (
           <div className="form-row form-row-flex">
             <label htmlFor="description">Description</label>
             <input

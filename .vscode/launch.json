@@ -5,7 +5,20 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Run Extension",
+      "name": "Extension (Isolated)",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "--disable-extensions",
+        "--extensionDevelopmentPath=${workspaceFolder}"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/bin/**/*.js"
+      ],
+      "preLaunchTask": "npm: build"
+    },
+    {
+      "name": "Extension (With Other Extensions)",
       "type": "extensionHost",
       "request": "launch",
       "args": [
@@ -14,20 +27,7 @@
       "outFiles": [
         "${workspaceFolder}/bin/**/*.js"
       ],
-      "preLaunchTask": "${workspaceFolder}/npm: build"
-    },
-    {
-      "name": "Extension Tests",
-      "type": "extensionHost",
-      "request": "launch",
-      "args": [
-        "--extensionDevelopmentPath=${workspaceFolder}",
-        "--extensionTestsPath=${workspaceFolder}/bin/test"
-      ],
-      "outFiles": [
-        "${workspaceFolder}/bin/**/*.js"
-      ],
-      "preLaunchTask": "${workspaceFolder}/npm: build"
+      "preLaunchTask": "npm: build"
     }
   ]
 }

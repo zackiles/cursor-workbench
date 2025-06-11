@@ -1,0 +1,8 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+- The is a vscode extension for desktop specifically designed for the vs code fork named Cursor, which shared the same general support for vs code extensions and configuration
+- The extensions webviews should work for both dark and light themes, relying on the default css classes that allow theme authors to overide styles
+- The extension should always leverage the base styles as much as possible in [index.css](mdc:src/webviews/styles/index.css) and [base.css](mdc:src/webviews/styles/base.css)

@@ -83,30 +83,27 @@ To use this extension with different file extensions:
 ## Development
 
 ### Local Development
-See [DEVELOPMENT.md](./DEVELOPMENT.md) for complete development setup and testing instructions.
 
 Quick start:
 ```bash
 # Install dependencies
 npm install
 
-# Start development mode
+# Start development mode (builds to /bin and watches for changes)
 npm run dev
 
-# Test the extension (opens Extension Development Host)
-# Press F5 in VS Code
+# Open VS Code Extension Development Host (F5) or manually:
+code --extensionDevelopmentPath=. .
 ```
 
-### Local Building & Installation
-See [RELEASING.md](./RELEASING.md) for complete build and release instructions.
+### Building & Testing
 
-Quick commands:
 ```bash
-# Build and install locally
-npm run release:local
+# Build for production (outputs to /dist with VSIX package)
+npm run build
 
-# Just test the build process
-npm run verify:package
+# Run tests
+npm run test
 ```
 
 ## Project Structure
@@ -186,11 +183,7 @@ For maintainers: See [docs/VERSIONING.md](./docs/VERSIONING.md) for release crea
 
 ## Quick Links
 
-- 📖 [Development Guide](./DEVELOPMENT.md)
-- 🚀 [Release Guide](./RELEASING.md)
 - ⚙️ [Configuration Guide](./EXTENSION_CONFIG.md)
-- 🏷️ [Versioning Guide](./docs/VERSIONING.md)
-- ⚡ [Optimization Guide](./docs/OPTIMIZATION.md)
 - 📋 [Latest Release](../../releases/latest)
 - 🐛 [Report Issues](../../issues)
 
@@ -228,37 +221,33 @@ cursor-workbench/
 
 ## Development Workflow
 
-1. **Hot Reload Development** (Recommended):
+1. **Development Mode** (with hot reload):
    ```bash
-   npm run hot-reload
+   npm run dev
    ```
-   This will automatically rebuild the extension when files change and reload VS Code.
+   This builds the extension to `/bin`, watches for file changes, and automatically reloads the VS Code window when changes are detected.
 
-2. **Build and Package**:
+2. **Production Build**:
    ```bash
-   npm run build         # Build the extension
-   npm run package       # Package as .vsix
-   npm run dev:install   # Build, package and install locally
+   npm run build
    ```
+   Builds the extension to `/dist` and creates a `.vsix` package ready for distribution.
 
 3. **Testing**:
    ```bash
-   npm run test:local    # Run basic tests
-   npm run verify:package # Verify packaging works
+   npm run test
    ```
+   Runs the test suite after building a development version.
 
 ## Release Process
 
-The extension uses semantic versioning. Packages are created in the `dist/` directory:
+The extension uses semantic versioning. Build the production package:
 
 ```bash
-npm run release:local   # Full local release process
+npm run build
 ```
 
-This script builds, packages, and installs the extension in both VS Code and Cursor (if available).
-
-For publishing to the marketplace, use:
-
-```bash
-vsce publish           # Requires marketplace publisher access
-```
+This creates a `.vsix` file in the `dist/` directory that can be:
+- Installed locally: `code --install-extension dist/cursor-workbench-0.0.1.vsix`
+- Distributed to users
+- Published to the marketplace: `vsce publish`
