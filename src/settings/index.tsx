@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { GeneralTab } from './GeneralTab'
 import { DebugTab } from './DebugTab'
 import { DocsTab } from './DocsTab'
+import './settings.css'
 
 interface VSCodeAPI {
   postMessage: (message: unknown) => void

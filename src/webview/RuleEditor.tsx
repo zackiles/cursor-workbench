@@ -3,6 +3,7 @@ import {
   MDXEditor,
   markdownShortcutPlugin,
 } from '@mdxeditor/editor'
+import './RuleEditor.css'
 
 interface VSCodeAPI {
   postMessage: (message: unknown) => void

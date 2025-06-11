@@ -5,30 +5,12 @@ const fs = require('node:fs')
 const isWatch = process.argv.includes('--watch')
 const isDev = isWatch || process.argv.includes('--dev')
 
-function copyMDXEditorCSS() {
-  try {
-    const srcPath = path.join(
-      'node_modules',
-      '@mdxeditor',
-      'editor',
-      'dist',
-      'style.css'
-    )
-    const destPath = path.join('bin', 'mdx-editor.css')
-
-    // Ensure bin directory exists
-    if (!fs.existsSync('bin')) {
-      fs.mkdirSync('bin', { recursive: true })
-    }
-
-    fs.copyFileSync(srcPath, destPath)
-    console.log('MDX Editor CSS copied to bin/mdx-editor.css')
-  } catch (error) {
-    console.warn('Could not copy MDX Editor CSS:', error.message)
-  }
-}
-
 async function build() {
+  // Ensure bin directory exists
+  if (!fs.existsSync('bin')) {
+    fs.mkdirSync('bin', { recursive: true })
+  }
+
   // Extension build context
   const extensionCtx = await esbuild.context({
     entryPoints: ['src/main.ts'],
@@ -71,15 +53,36 @@ async function build() {
     logLevel: 'info'
   })
 
-  // Copy MDX Editor CSS
-  copyMDXEditorCSS()
+  // CSS build context - using a single entry point that imports others
+  const cssCtx = await esbuild.context({
+    entryPoints: ['src/webview/RuleEditor.css'],
+    bundle: true,
+    outfile: 'bin/webview.css',
+    minify: !isDev,
+    loader: {
+      '.css': 'css'
+    },
+    logLevel: 'info'
+  })
 
   if (isWatch) {
     console.log('Watching for changes...')
-    await Promise.all([extensionCtx.watch(), webviewCtx.watch()])
+    await Promise.all([
+      extensionCtx.watch(),
+      webviewCtx.watch(),
+      cssCtx.watch()
+    ])
   } else {
-    await Promise.all([extensionCtx.rebuild(), webviewCtx.rebuild()])
-    await Promise.all([extensionCtx.dispose(), webviewCtx.dispose()])
+    await Promise.all([
+      extensionCtx.rebuild(),
+      webviewCtx.rebuild(),
+      cssCtx.rebuild()
+    ])
+    await Promise.all([
+      extensionCtx.dispose(),
+      webviewCtx.dispose(),
+      cssCtx.dispose()
+    ])
     console.log('Build complete!')
   }
 }
