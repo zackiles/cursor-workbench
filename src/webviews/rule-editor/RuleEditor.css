@@ -370,6 +370,8 @@
     flex: 1;
     padding: 12px 16px 16px 16px;
     overflow: auto;
+    color: var(--vscode-editor-foreground, #d4d4d4);
+    background: var(--vscode-editor-background, #1e1e1e);
 }
 
 /* MDX Editor Styles */

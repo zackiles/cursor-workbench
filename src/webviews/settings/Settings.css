@@ -130,7 +130,7 @@
 
 .tab-label {
     display: none;
-    font-size: 14px;
+    font-size: 11px;
     font-weight: 400;
     letter-spacing: 0.1px;
 }
@@ -200,7 +200,7 @@
 }
 
 .content-title {
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 500;
     margin: 0;
     color: var(--vscode-foreground);
@@ -209,13 +209,13 @@
 
 @media (min-width: 768px) {
     .content-title {
-        font-size: 22px;
+        font-size: 17px;
     }
 }
 
 @media (min-width: 992px) {
     .content-title {
-        font-size: 24px;
+        font-size: 18px;
     }
 }
 
@@ -271,7 +271,7 @@
 }
 
 .registry-title {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 500;
     margin: 0;
     margin-right: 12px;
@@ -331,7 +331,7 @@
     border: 1px solid var(--vscode-button-border, transparent);
     border-radius: 4px;
     padding: 6px 14px;
-    font-size: 14px;
+    font-size: 12px;
     cursor: pointer;
     font-weight: 500;
     height: 32px;
@@ -372,7 +372,7 @@
 }
 
 .preferences-heading {
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 500;
     color: var(--vscode-foreground);
     margin: 0 0 16px 0;
@@ -400,7 +400,7 @@
 }
 
 .editor-settings-title {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 500;
     margin: 0 0 6px 0;
     color: var(--vscode-foreground);

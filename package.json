@@ -15,7 +15,8 @@
     "Other"
   ],
   "activationEvents": [
-    "onCustomEditor:customFileEditor"
+    "onCustomEditor:customFileEditor",
+    "onFileSystem:cursorfs"
   ],
   "main": "./bin/extension.js",
   "enabledApiProposals": [
@@ -28,10 +29,21 @@
     "customEditors": [
       {
         "viewType": "customFileEditor",
-        "displayName": "Custom File Editor",
+        "displayName": "Rule Editor",
         "selector": [
           {
             "filenamePattern": "*.rule"
+          },
+          {
+            "filenamePattern": "*.mdc"
+          },
+          {
+            "filenamePattern": "*.rule",
+            "scheme": "cursorfs"
+          },
+          {
+            "filenamePattern": "*.mdc",
+            "scheme": "cursorfs"
           }
         ],
         "priority": "default"
@@ -41,8 +53,7 @@
       "explorer": [
         {
           "id": "rulesExplorer",
-          "name": "Cursor Workbench",
-          "when": "workspaceFolderCount > 0"
+          "name": "Cursor Workbench"
         }
       ]
     },
@@ -93,6 +104,11 @@
         {
           "command": "rulesExplorer.syncFile",
           "when": "view == rulesExplorer && viewItem == ruleFile",
+          "group": "inline"
+        },
+        {
+          "command": "rulesExplorer.syncFile",
+          "when": "view == rulesExplorer && viewItem == virtualRuleFile",
           "group": "inline"
         }
       ]

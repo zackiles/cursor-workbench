@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 import { logger } from '../common/logger'
 import { getNonce } from '../common/utils'
+import { registryManager } from '../common/registryManager'
 
 let currentPanel: vscode.WebviewPanel | undefined
 
@@ -61,15 +62,16 @@ export function createSettingsWebview(context: vscode.ExtensionContext): void {
       const userRegistry = context.workspaceState.get(
         'cursorWorkBenchUserRegistry'
       )
-      const teamRegistry = context.workspaceState.get(
-        'cursorWorkBenchTeamRegistry'
-      )
+      const teamRegistryFromManager = registryManager.getTeamRegistry()
 
       panel.webview.postMessage({
         type: 'registryState',
         data: {
           userRegistry: userRegistry || null,
-          teamRegistry: teamRegistry || null
+          teamRegistry: teamRegistryFromManager?.url || null,
+          userRegistryFileCount: userRegistry ? 0 : undefined, // TODO: Implement user registry file counting
+          teamRegistryFileCount:
+            teamRegistryFromManager?.files.length || undefined
         }
       })
     } catch (error) {
@@ -92,39 +94,60 @@ export function createSettingsWebview(context: vscode.ExtensionContext): void {
           // Handle add registry functionality
           try {
             const registryType = message.registryType as 'user' | 'team'
-            const stateKey =
-              registryType === 'user'
-                ? 'cursorWorkBenchUserRegistry'
-                : 'cursorWorkBenchTeamRegistry'
             const displayName = registryType === 'user' ? 'User' : 'Team'
 
             const registryUrl = await vscode.window.showInputBox({
-              prompt: `Enter the URL or file path for the ${displayName} Registry`,
+              prompt: `Enter the ${registryType === 'team' ? 'Git repository URL' : 'URL or file path'} for the ${displayName} Registry`,
               placeHolder:
-                'https://example.com/registry.json or file:///path/to/registry.json',
+                registryType === 'team'
+                  ? 'git@github.com:user/repo.git or https://github.com/user/repo.git'
+                  : 'https://example.com/registry.json or file:///path/to/registry.json',
               validateInput: (value) => {
                 if (!value || value.trim().length === 0) {
-                  return 'Please enter a valid URL or file path'
+                  return `Please enter a valid ${registryType === 'team' ? 'Git repository URL' : 'URL or file path'}`
                 }
-                // Basic validation for URL or file path
-                if (!value.match(/^(https?:\/\/|file:\/\/\/|\w+:)/)) {
-                  return 'Please enter a valid URL (http/https) or file path (file://)'
+
+                if (registryType === 'team') {
+                  // Validate git URL formats
+                  if (!value.match(/^(git@|https:\/\/.*\.git$|.*\.git$)/)) {
+                    return 'Please enter a valid Git repository URL (git@... or https://.../.git)'
+                  }
+                } else {
+                  // Basic validation for URL or file path
+                  if (!value.match(/^(https?:\/\/|file:\/\/\/|\w+:)/)) {
+                    return 'Please enter a valid URL (http/https) or file path (file://)'
+                  }
                 }
                 return null
               }
             })
 
             if (registryUrl) {
-              // Save to workspace state
-              await context.workspaceState.update(stateKey, registryUrl.trim())
-              logger.log(`${displayName} registry saved:`, registryUrl)
+              const trimmedUrl = registryUrl.trim()
+
+              if (registryType === 'team') {
+                // Use registry manager for team registries
+                await registryManager.addTeamRegistry(trimmedUrl)
+                logger.log(
+                  `${displayName} registry added via registry manager:`,
+                  trimmedUrl
+                )
+              } else {
+                // Save user registry to workspace state
+                const stateKey = 'cursorWorkBenchUserRegistry'
+                await context.workspaceState.update(stateKey, trimmedUrl)
+                logger.log(
+                  `${displayName} registry saved to workspace state:`,
+                  trimmedUrl
+                )
+              }
 
               // Notify webview of success and send updated state
               panel.webview.postMessage({
                 type: 'registryAdded',
                 data: {
                   registryType,
-                  url: registryUrl.trim()
+                  url: trimmedUrl
                 }
               })
             } else {
@@ -151,15 +174,18 @@ export function createSettingsWebview(context: vscode.ExtensionContext): void {
           // Handle remove registry functionality
           try {
             const registryType = message.registryType as 'user' | 'team'
-            const stateKey =
-              registryType === 'user'
-                ? 'cursorWorkBenchUserRegistry'
-                : 'cursorWorkBenchTeamRegistry'
             const displayName = registryType === 'user' ? 'User' : 'Team'
 
-            // Remove from workspace state
-            await context.workspaceState.update(stateKey, undefined)
-            logger.log(`${displayName} registry removed`)
+            if (registryType === 'team') {
+              // Use registry manager for team registries
+              await registryManager.removeTeamRegistry()
+              logger.log(`${displayName} registry removed via registry manager`)
+            } else {
+              // Remove user registry from workspace state
+              const stateKey = 'cursorWorkBenchUserRegistry'
+              await context.workspaceState.update(stateKey, undefined)
+              logger.log(`${displayName} registry removed from workspace state`)
+            }
 
             // Notify webview of removal
             panel.webview.postMessage({
@@ -191,15 +217,16 @@ export function createSettingsWebview(context: vscode.ExtensionContext): void {
             const userRegistry = context.workspaceState.get(
               'cursorWorkBenchUserRegistry'
             )
-            const teamRegistry = context.workspaceState.get(
-              'cursorWorkBenchTeamRegistry'
-            )
+            const teamRegistryFromManager = registryManager.getTeamRegistry()
 
             panel.webview.postMessage({
               type: 'registryState',
               data: {
                 userRegistry: userRegistry || null,
-                teamRegistry: teamRegistry || null
+                teamRegistry: teamRegistryFromManager?.url || null,
+                userRegistryFileCount: userRegistry ? 0 : undefined, // TODO: Implement user registry file counting
+                teamRegistryFileCount:
+                  teamRegistryFromManager?.files.length || undefined
               }
             })
           } catch (error) {

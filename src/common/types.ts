@@ -41,4 +41,6 @@ export interface ExtensionInfoResponse {
 export interface RegistryState {
   userRegistry: string | null
   teamRegistry: string | null
+  userRegistryFileCount?: number
+  teamRegistryFileCount?: number
 }

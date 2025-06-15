@@ -8,7 +8,7 @@ import { createSettingsWebview } from '../settings/SettingsProvider'
 // File extension configuration - change this to update the supported file extension
 //const TARGET_FILE_EXTENSION = '*.rule'
 const EDITOR_VIEW_TYPE = 'customFileEditor'
-const EDITOR_DISPLAY_NAME = 'Custom File Editor'
+const EDITOR_DISPLAY_NAME = 'Rule Editor'
 
 export class RuleEditorProvider implements vscode.CustomTextEditorProvider {
   public static register(context: vscode.ExtensionContext): vscode.Disposable {
@@ -40,7 +40,8 @@ export class RuleEditorProvider implements vscode.CustomTextEditorProvider {
     logger.log('RuleDocument created', {
       rule: customDocument.rule,
       globs: customDocument.globs,
-      content: customDocument.content
+      content: customDocument.content,
+      scheme: document.uri.scheme
     })
 
     // Send initial document data to webview
@@ -63,29 +64,18 @@ export class RuleEditorProvider implements vscode.CustomTextEditorProvider {
             this.updateWebview(webviewPanel, customDocument, document.uri)
             return
           case 'navigate':
-            // Handle breadcrumb navigation
+            // Handle breadcrumb navigation - reveal in file explorer instead of opening as workspace
             try {
               const dirUri = vscode.Uri.file(message.path)
-              await vscode.commands.executeCommand(
-                'vscode.openFolder',
-                dirUri,
-                { forceNewWindow: false }
-              )
-            } catch (error) {
-              logger.log('Failed to navigate to directory', {
-                path: message.path,
-                error
+              await vscode.commands.executeCommand('revealInExplorer', dirUri)
+              logger.log('Revealed directory in explorer', {
+                path: message.path
               })
-              // Fallback: reveal in explorer
-              try {
-                const dirUri = vscode.Uri.file(message.path)
-                await vscode.commands.executeCommand('revealInExplorer', dirUri)
-              } catch (fallbackError) {
-                logger.log('Failed to reveal in explorer', {
-                  path: message.path,
-                  error: fallbackError
-                })
-              }
+            } catch (error) {
+              logger.log('Failed to reveal directory in explorer', {
+                path: message.path,
+                error: error instanceof Error ? error.message : String(error)
+              })
             }
             return
           case 'log':

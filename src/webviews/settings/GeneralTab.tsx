@@ -8,7 +8,9 @@ interface GeneralTabProps {
 export const GeneralTab = ({ vscode }: GeneralTabProps) => {
   const [registryState, setRegistryState] = useState<RegistryState>({
     userRegistry: null,
-    teamRegistry: null
+    teamRegistry: null,
+    userRegistryFileCount: undefined,
+    teamRegistryFileCount: undefined
   })
 
   // Handle registry add/remove
@@ -73,8 +75,18 @@ export const GeneralTab = ({ vscode }: GeneralTabProps) => {
 
   const renderRegistrySection = (type: 'user' | 'team', title: string, description: string) => {
     const registryKey = (`${type}Registry`) as keyof RegistryState
+    const fileCountKey = (`${type}RegistryFileCount`) as keyof RegistryState
     const registryUrl = registryState[registryKey]
+    const fileCount = registryState[fileCountKey] as number | undefined
     const hasRegistry = !!registryUrl
+
+    // Create description based on registry status
+    const getDescription = () => {
+      if (hasRegistry && typeof fileCount === 'number') {
+        return `${fileCount} ${fileCount === 1 ? 'file' : 'files'} loaded from registry`
+      }
+      return description
+    }
 
     return (
       <div className="registry-item">
@@ -108,13 +120,12 @@ export const GeneralTab = ({ vscode }: GeneralTabProps) => {
                 className="add-button"
                 onClick={() => handleRemoveRegistry(type)}
                 type="button"
-                style={{ backgroundColor: 'var(--vscode-errorForeground)', borderColor: 'var(--vscode-errorForeground)' }}
+                style={{ backgroundColor: 'var(--vscode-errorForeground)', borderColor: 'var(--vscode-errorForeground)', minWidth: 'auto', padding: '6px' }}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-label="Remove">
                   <title>Remove registry</title>
                   <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>
                 </svg>
-                Remove Registry
               </button>
             </div>
           ) : (
@@ -131,7 +142,7 @@ export const GeneralTab = ({ vscode }: GeneralTabProps) => {
             </button>
           )}
         </div>
-        <p className="registry-description">{description}</p>
+        <p className="registry-description">{getDescription()}</p>
       </div>
     )
   }
@@ -143,8 +154,8 @@ export const GeneralTab = ({ vscode }: GeneralTabProps) => {
       </div>
 
       <div className="registry-section">
-        {renderRegistrySection('user', 'User Rules', 'Manage your custom user rules and preferences')}
         {renderRegistrySection('team', 'Team Rules', 'Manage your custom team rules and preferences')}
+        {renderRegistrySection('user', 'User Rules', 'Manage your custom user rules and preferences')}
       </div>
 
       <div className="preferences-section">

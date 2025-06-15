@@ -1,6 +1,9 @@
 import * as vscode from 'vscode'
 import { RuleEditorProvider } from './editor/RuleEditorProvider'
 import { RulesTreeProvider } from './explorer/RulesTreeProvider'
+import { CursorFileSystemProvider } from './explorer/CursorFileSystemProvider'
+import { registryManager } from './common/registryManager'
+import { fileDecorationProvider } from './common/fileDecorationProvider'
 import {
   createSettingsWebview,
   refreshSettingsWebview
@@ -54,7 +57,7 @@ async function openTestRuleIfNeeded(
   }
 }
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
   // Print environment and build info
   const env = process.env.NODE_ENV || 'production'
   const buildTime = process.env.BUILD_TIME || 'unknown'
@@ -64,6 +67,9 @@ export function activate(context: vscode.ExtensionContext) {
   logger.log('Activating Cursor Workbench extension')
   logger.log(`Environment: ${env}`)
   logger.log(`Last built: ${buildDate}`)
+
+  // Initialize the registry manager
+  await registryManager.initialize(context)
 
   // Development mode: watch for extension changes and auto-reload
   if (env === 'development') {
@@ -93,6 +99,23 @@ export function activate(context: vscode.ExtensionContext) {
   const providerRegistration = RuleEditorProvider.register(context)
   context.subscriptions.push(providerRegistration)
 
+  // Register the custom file system provider for cursorfs scheme
+  const fileSystemProvider = new CursorFileSystemProvider()
+  const fileSystemRegistration = vscode.workspace.registerFileSystemProvider(
+    'cursorfs',
+    fileSystemProvider,
+    {
+      isCaseSensitive: true
+    }
+  )
+  context.subscriptions.push(fileSystemRegistration)
+
+  // Register the file decoration provider for rule files
+  const decorationRegistration = vscode.window.registerFileDecorationProvider(
+    fileDecorationProvider
+  )
+  context.subscriptions.push(decorationRegistration)
+
   // Get workspace root
   const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
 
@@ -114,9 +137,6 @@ export function activate(context: vscode.ExtensionContext) {
     async () => {
       logger.log('Opening settings')
       createSettingsWebview(context)
-
-      // Also open test.rule if it's not already open
-      await openTestRuleIfNeeded(context)
     }
   )
 
