@@ -3,6 +3,7 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { logger } from '../common/logger'
 import { registryManager } from '../common/registryManager'
+import { configManager } from '../common/configManager'
 
 export class RulesTreeItem extends vscode.TreeItem {
   constructor(
@@ -338,9 +339,7 @@ export class RulesTreeProvider
   }
 
   private isRuleFile(fileName: string): boolean {
-    const ruleExtensions = ['.rule', '.md', '.mdc', '.yml', '.yaml', '.json']
-    const extension = path.extname(fileName).toLowerCase()
-    return ruleExtensions.includes(extension)
+    return configManager.isRuleFile(fileName)
   }
 
   async syncFile(item: RulesTreeItem): Promise<void> {

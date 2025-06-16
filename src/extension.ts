@@ -4,13 +4,54 @@ import { RulesTreeProvider } from './explorer/RulesTreeProvider'
 import { CursorFileSystemProvider } from './explorer/CursorFileSystemProvider'
 import { registryManager } from './common/registryManager'
 import { fileDecorationProvider } from './common/fileDecorationProvider'
+import { configManager } from './common/configManager'
 import {
   createSettingsWebview,
-  refreshSettingsWebview
+  refreshSettingsWebview,
+  getHtmlForWebview
 } from './settings/SettingsProvider'
 import { logger } from './common/logger'
 
-// Helper function to open test.rule file if not already open
+async function registerAsDefaultEditor(): Promise<void> {
+  const extensions = configManager.getEnabledExtensions()
+
+  for (const ext of extensions) {
+    const selector = `*${ext}`
+    try {
+      await vscode.commands.executeCommand(
+        'workbench.action.setDefaultEditor',
+        selector,
+        'customFileEditor'
+      )
+      logger.log(`Registered as default editor for ${ext}`)
+    } catch (error) {
+      logger.log(`Failed to register as default editor for ${ext}:`, error)
+    }
+  }
+
+  await configManager.setIsDefaultRuleEditor(true)
+}
+
+async function unregisterAsDefaultEditor(): Promise<void> {
+  const extensions = configManager.getEnabledExtensions()
+
+  for (const ext of extensions) {
+    const selector = `*${ext}`
+    try {
+      await vscode.commands.executeCommand(
+        'workbench.action.resetDefaultEditor',
+        selector
+      )
+      logger.log(`Reset default editor for ${ext}`)
+    } catch (error) {
+      logger.log(`Failed to reset default editor for ${ext}:`, error)
+    }
+  }
+
+  await configManager.setIsDefaultRuleEditor(false)
+  logger.log('Unregistered as default rule editor')
+}
+
 async function openTestRuleIfNeeded(
   context: vscode.ExtensionContext
 ): Promise<void> {
@@ -19,11 +60,9 @@ async function openTestRuleIfNeeded(
     'test.rule'
   )
 
-  // Check if test.rule is already open
   let isTestRuleOpen = false
 
   try {
-    // First check if the API exists (tabGroups is only available in newer VS Code versions)
     if (vscode.window.tabGroups?.all) {
       isTestRuleOpen = vscode.window.tabGroups.all
         .flatMap((group) => group.tabs)
@@ -33,20 +72,17 @@ async function openTestRuleIfNeeded(
             tab.input.uri.fsPath === testRuleUri.fsPath
         )
     } else {
-      // Fall back to checking active text editors (less reliable but works in older versions)
       isTestRuleOpen = vscode.window.visibleTextEditors.some(
         (editor) => editor.document.uri.fsPath === testRuleUri.fsPath
       )
     }
   } catch (error) {
     logger.log('Error checking if test.rule is open:', error)
-    // Default to false on error - we'll try to open it
     isTestRuleOpen = false
   }
 
   if (!isTestRuleOpen) {
     try {
-      // Open the test.rule file in a new editor
       await vscode.commands.executeCommand('vscode.open', testRuleUri)
       logger.log('Opened test.rule file')
     } catch (error) {
@@ -58,7 +94,6 @@ async function openTestRuleIfNeeded(
 }
 
 export async function activate(context: vscode.ExtensionContext) {
-  // Print environment and build info
   const env = process.env.NODE_ENV || 'production'
   const buildTime = process.env.BUILD_TIME || 'unknown'
   const buildDate =
@@ -68,10 +103,23 @@ export async function activate(context: vscode.ExtensionContext) {
   logger.log(`Environment: ${env}`)
   logger.log(`Last built: ${buildDate}`)
 
-  // Initialize the registry manager
+  await configManager.initialize(context)
   await registryManager.initialize(context)
 
-  // Development mode: watch for extension changes and auto-reload
+  const providerRegistration = RuleEditorProvider.register(context)
+  context.subscriptions.push(providerRegistration)
+
+  const isDefaultRuleEditor = configManager.getSettings().isDefaultRuleEditor
+
+  if (isDefaultRuleEditor) {
+    await registerAsDefaultEditor()
+  } else if (configManager.isFirstInstallation()) {
+    logger.log(
+      'First installation detected - enabling custom editor for configured extensions'
+    )
+    await registerAsDefaultEditor()
+  }
+
   if (env === 'development') {
     const extensionPath = context.extensionPath
     const watcher = vscode.workspace.createFileSystemWatcher(
@@ -85,21 +133,19 @@ export async function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(watcher)
 
-    // Auto-open settings webview and test.rule in development mode
     logger.log('Development mode: auto-opening settings webview and test.rule')
 
-    // First open settings webview
     createSettingsWebview(context)
-
-    // Then open test.rule if it's not already open
     void openTestRuleIfNeeded(context)
+
+    setTimeout(() => {
+      logger.log('Opening Developer Tools in development mode')
+      vscode.commands.executeCommand(
+        'workbench.action.webview.openDeveloperTools'
+      )
+    }, 1000)
   }
 
-  // Register the custom text editor provider for custom files
-  const providerRegistration = RuleEditorProvider.register(context)
-  context.subscriptions.push(providerRegistration)
-
-  // Register the custom file system provider for cursorfs scheme
   const fileSystemProvider = new CursorFileSystemProvider()
   const fileSystemRegistration = vscode.workspace.registerFileSystemProvider(
     'cursorfs',
@@ -110,20 +156,15 @@ export async function activate(context: vscode.ExtensionContext) {
   )
   context.subscriptions.push(fileSystemRegistration)
 
-  // Register the file decoration provider for rule files
   const decorationRegistration = vscode.window.registerFileDecorationProvider(
     fileDecorationProvider
   )
   context.subscriptions.push(decorationRegistration)
 
-  // Get workspace root
   const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
-
-  // Register the rules tree data provider
   const rulesProvider = new RulesTreeProvider(workspaceRoot)
   vscode.window.registerTreeDataProvider('rulesExplorer', rulesProvider)
 
-  // Register commands
   const refreshCommand = vscode.commands.registerCommand(
     'rulesExplorer.refresh',
     () => {
@@ -148,7 +189,6 @@ export async function activate(context: vscode.ExtensionContext) {
     }
   )
 
-  // Command to manually refresh the settings webview (helpful for development)
   const refreshSettingsCommand = vscode.commands.registerCommand(
     'rulesExplorer.refreshSettings',
     () => {
@@ -158,17 +198,43 @@ export async function activate(context: vscode.ExtensionContext) {
     }
   )
 
+  const toggleCustomEditorCommand = vscode.commands.registerCommand(
+    'cursorWorkbench.toggleCustomEditor',
+    async (enabled: boolean) => {
+      logger.log('Toggling custom editor via command:', enabled)
+      if (enabled) {
+        await registerAsDefaultEditor()
+      } else {
+        await unregisterAsDefaultEditor()
+      }
+    }
+  )
+
   context.subscriptions.push(
     refreshCommand,
     settingsCommand,
     syncFileCommand,
-    refreshSettingsCommand
+    refreshSettingsCommand,
+    toggleCustomEditorCommand
   )
 
-  // Show the output channel
+  context.subscriptions.push(
+    vscode.window.registerWebviewPanelSerializer('cursorWorkbenchSettings', {
+      async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel) {
+        webviewPanel.webview.options = {
+          enableScripts: true,
+          localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'bin')]
+        }
+
+        webviewPanel.webview.html = getHtmlForWebview(
+          webviewPanel.webview,
+          context
+        )
+      }
+    })
+  )
+
   logger.show()
 }
 
-export function deactivate() {
-  // Extension cleanup
-}
+export function deactivate() {}

@@ -1,9 +1,10 @@
 {
-  "name": "cursor-workbench",
-  "displayName": "Cursor Workbench",
+  "name": "@zackiles/cursor-workbench",
+  "displayName": "Cursor Workbench - Rule Editor",
   "version": "0.0.1",
-  "description": "Generic VS Code extension for editing files with YAML front matter and content",
-  "publisher": "cursor-workbench",
+  "description": "Advanced rule editor for Cursor IDE with team collaboration, Git synchronization, and intelligent frontmatter management",
+  "publisher": "zackiles",
+  "icon": "logo.png",
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -116,9 +117,13 @@
   },
   "scripts": {
     "build": "node scripts/build.js --production",
+    "package": "node scripts/build.js --production",
     "test": "node scripts/build.js --dev && node scripts/test.js",
-    "dev": "node scripts/build.js --dev && open -a 'Visual Studio Code' --args --disable-extensions --extensionDevelopmentPath=\"$PWD\" \"$PWD\" & node scripts/build.js --dev --watch",
-    "dev:isolated": "node scripts/build.js --dev && code --disable-extensions --extensionDevelopmentPath=\"$PWD\" \"$PWD\""
+    "test:local": "echo 'Running local tests...' && npm run build",
+    "verify:package": "echo 'Verifying package...' && ls -la *.vsix",
+    "release:ovsx": "ovsx publish --pat $OPEN_VSX_TOKEN",
+    "dev": "node scripts/build.js --dev && open -a 'Visual Studio Code' --args --disable-extensions --enable-proposed-api --extensionDevelopmentPath=\"$PWD\" \"$PWD\" & node scripts/build.js --dev --watch",
+    "dev:isolated": "node scripts/build.js --dev && code --disable-extensions --enable-proposed-api --extensionDevelopmentPath=\"$PWD\" \"$PWD\""
   },
   "repository": {
     "type": "git",
@@ -131,16 +136,18 @@
   },
   "homepage": "https://github.com/zackiles/cursor-workbench#readme",
   "dependencies": {
-    "@mdxeditor/editor": "^3.35.0",
+    "marked": "^12.0.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
+    "@types/marked": "^6.0.0",
     "@types/node": "^20.12.12",
     "@types/react": "^19.1.6",
     "@types/react-dom": "^19.1.6",
     "@types/vscode": "^1.85.0",
     "esbuild": "^0.19.12",
+    "ovsx": "^0.9.10",
     "typescript": "^5.4.5",
     "vsce": "^2.15.0"
   }

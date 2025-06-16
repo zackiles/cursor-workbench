@@ -1,45 +1,41 @@
 # VS Code Extension Ignore File
-# Files and folders to exclude from the extension package
+# Only include what's necessary for the extension to run
 
-# Source files (we only need compiled output)
+# Development source files (compiled code is in bin/)
 src/**
 tsconfig.json
 *.ts
 
-# Build and development files
+# Development tools and configs
 scripts/**
 test/**
 docs/**
 .vscode/**
-
-# Distribution directory (where .vsix files are stored)
-dist/**
-
-# Dependencies (should be bundled, not included as separate files)
-node_modules/**
-
-# Git and version control
-.git/**
+.ai/**
+.cursor/**
 .github/**
-.gitignore
-.gitattributes
-
-# Development and configuration files
-*.md
-!README.md
-.env*
+.git/**
 .editorconfig
 .cursorignore*
 .repomixignore
 biome.json
 .npmignore
-
-# Development artifacts
-*.vsix
 *.log
 *.tsbuildinfo
 coverage/**
 .nyc_output/**
+
+# Build artifacts
+dist/**
+*.vsix
+
+# Dependencies (should be bundled in bin/)
+node_modules/**
+
+# Package lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
 
 # OS and editor files
 .DS_Store
@@ -48,28 +44,20 @@ Thumbs.db
 *.swo
 *~
 
-# Temporary files
-tmp/**
-temp/**
-.tmp/**
+# Unnecessary files for runtime
+launch-in-vscode.sh
+EXTENSION_CONFIG.md
+CHANGELOG.md
+.gitignore
+.gitattributes
 
-# Package lock files (not needed in extension)
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
+# Only allow specific markdown files
+*.md
+!README.md  # Keep the root README.md
 
-# IDE specific files
-.idea/**
-.vscode/settings.json
-.vscode/launch.json
-.vscode/tasks.json
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-
-# Only include what's necessary:
+# Keep only essential files:
 # - package.json (required)
-# - README.md (for marketplace)
+# - README.md (for marketplace and documentation)
 # - bin/** (compiled extension)
-# - Any required assets
+# - logo.png (extension icon)
+# - LICENSE

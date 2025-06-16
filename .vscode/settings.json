@@ -9,9 +9,6 @@
   "files.associations": {
     "repomix.config.json": "json5"
   },
-  "workbench.editorAssociations": {
-    "*.mdc": "default",
-  },
   "[json][jsonc]": {
     "editor.defaultFormatter": "vscode.json-language-features"
   },
@@ -40,7 +37,6 @@
     "hiberfil",
     "Iles",
     "keyrings",
-    "mdxeditor",
     "MILLIS",
     "modelcontextprotocol",
     "msvc",

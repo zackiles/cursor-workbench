@@ -1,18 +1,29 @@
-import * as vscode from 'vscode'
 import { logger } from '../common/logger'
 import { getNonce } from '../common/utils'
 import { registryManager } from '../common/registryManager'
+import { configManager } from '../common/configManager'
+import * as vscode from 'vscode'
 
-let currentPanel: vscode.WebviewPanel | undefined
+function convertGithubUrlToGit(url: string): string {
+  const githubHttpsRegex = /^https:\/\/github\.com\/([^\/]+)\/([^\/]+)(\.git)?$/
+  const match = url.match(githubHttpsRegex)
 
-// Function to refresh the existing settings webview if it exists
+  if (match) {
+    const [, owner, repo] = match
+    const repoName = repo.endsWith('.git') ? repo.slice(0, -4) : repo
+    return `git@github.com:${owner}/${repoName}.git`
+  }
+
+  return url
+}
+
+export let currentPanel: vscode.WebviewPanel | undefined
+
 export function refreshSettingsWebview(context: vscode.ExtensionContext): void {
   if (currentPanel) {
     logger.log('Refreshing existing settings webview')
-    // Update the HTML content with a new timestamp to bust cache
     currentPanel.webview.html = getHtmlForWebview(currentPanel.webview, context)
 
-    // Send a message to the webview that it should refresh its state
     currentPanel.webview.postMessage({
       type: 'refresh',
       timestamp: Date.now()
@@ -21,7 +32,6 @@ export function refreshSettingsWebview(context: vscode.ExtensionContext): void {
     return
   }
 
-  // If no panel exists, create a new one
   logger.log('No settings webview to refresh, creating new one')
   createSettingsWebview(context)
 }
@@ -65,13 +75,14 @@ export function createSettingsWebview(context: vscode.ExtensionContext): void {
       const teamRegistryFromManager = registryManager.getTeamRegistry()
 
       panel.webview.postMessage({
-        type: 'registryState',
+        type: 'settingsState',
         data: {
           userRegistry: userRegistry || null,
           teamRegistry: teamRegistryFromManager?.url || null,
           userRegistryFileCount: userRegistry ? 0 : undefined, // TODO: Implement user registry file counting
           teamRegistryFileCount:
-            teamRegistryFromManager?.files.length || undefined
+            teamRegistryFromManager?.files.length || undefined,
+          editorSettings: configManager.getSettings()
         }
       })
     } catch (error) {
@@ -109,8 +120,12 @@ export function createSettingsWebview(context: vscode.ExtensionContext): void {
 
                 if (registryType === 'team') {
                   // Validate git URL formats
-                  if (!value.match(/^(git@|https:\/\/.*\.git$|.*\.git$)/)) {
-                    return 'Please enter a valid Git repository URL (git@... or https://.../.git)'
+                  if (
+                    !value.match(
+                      /^(git@|https:\/\/github\.com\/[^\/]+\/[^\/]+|.*\.git$)/
+                    )
+                  ) {
+                    return 'Please enter a valid Git repository URL (git@... or https://github.com/owner/repo)'
                   }
                 } else {
                   // Basic validation for URL or file path
@@ -125,13 +140,20 @@ export function createSettingsWebview(context: vscode.ExtensionContext): void {
             if (registryUrl) {
               const trimmedUrl = registryUrl.trim()
 
+              // Convert HTTPS GitHub URLs to Git URLs if it's a team registry
+              const convertedUrl =
+                registryType === 'team'
+                  ? convertGithubUrlToGit(trimmedUrl)
+                  : trimmedUrl
+
               if (registryType === 'team') {
                 // Use registry manager for team registries
-                await registryManager.addTeamRegistry(trimmedUrl)
-                logger.log(
-                  `${displayName} registry added via registry manager:`,
-                  trimmedUrl
-                )
+                await registryManager.addTeamRegistry(convertedUrl)
+                const logMessage =
+                  convertedUrl !== trimmedUrl
+                    ? `${displayName} registry added via registry manager: ${convertedUrl} (converted from ${trimmedUrl})`
+                    : `${displayName} registry added via registry manager: ${convertedUrl}`
+                logger.log(logMessage)
               } else {
                 // Save user registry to workspace state
                 const stateKey = 'cursorWorkBenchUserRegistry'
@@ -142,12 +164,19 @@ export function createSettingsWebview(context: vscode.ExtensionContext): void {
                 )
               }
 
-              // Notify webview of success and send updated state
+              // Get the file count for the registry
+              const fileCount =
+                registryType === 'team'
+                  ? registryManager.getTeamRegistry()?.files.length || 0
+                  : 0 // TODO: Implement user registry file counting
+
+              // Notify webview of success and send updated state with file count
               panel.webview.postMessage({
                 type: 'registryAdded',
                 data: {
                   registryType,
-                  url: trimmedUrl
+                  url: registryType === 'team' ? convertedUrl : trimmedUrl,
+                  fileCount
                 }
               })
             } else {
@@ -211,8 +240,8 @@ export function createSettingsWebview(context: vscode.ExtensionContext): void {
             })
           }
           return
-        case 'getRegistryState':
-          // Send current registry state to webview
+        case 'getSettingsState':
+          // Send current settings state to webview
           try {
             const userRegistry = context.workspaceState.get(
               'cursorWorkBenchUserRegistry'
@@ -220,17 +249,74 @@ export function createSettingsWebview(context: vscode.ExtensionContext): void {
             const teamRegistryFromManager = registryManager.getTeamRegistry()
 
             panel.webview.postMessage({
-              type: 'registryState',
+              type: 'settingsState',
               data: {
                 userRegistry: userRegistry || null,
                 teamRegistry: teamRegistryFromManager?.url || null,
                 userRegistryFileCount: userRegistry ? 0 : undefined, // TODO: Implement user registry file counting
                 teamRegistryFileCount:
-                  teamRegistryFromManager?.files.length || undefined
+                  teamRegistryFromManager?.files.length || undefined,
+                editorSettings: configManager.getSettings()
               }
             })
           } catch (error) {
-            logger.log('Error getting registry state:', error)
+            logger.log('Error getting settings state:', error)
+          }
+          return
+        case 'toggleEditor':
+          // Handle toggle editor functionality
+          try {
+            const enabled = message.enabled as boolean
+            logger.log('Toggling editor enabled state:', enabled)
+
+            // Use the new command to enable/disable the custom editor
+            await vscode.commands.executeCommand(
+              'cursorWorkbench.toggleCustomEditor',
+              enabled
+            )
+
+            // Send updated settings state
+            panel.webview.postMessage({
+              type: 'settingsState',
+              data: {
+                userRegistry:
+                  context.workspaceState.get('cursorWorkBenchUserRegistry') ||
+                  null,
+                teamRegistry: registryManager.getTeamRegistry()?.url || null,
+                userRegistryFileCount: undefined,
+                teamRegistryFileCount:
+                  registryManager.getTeamRegistry()?.files.length || undefined,
+                editorSettings: configManager.getSettings()
+              }
+            })
+          } catch (error) {
+            logger.log('Error toggling editor:', error)
+          }
+          return
+        case 'updateExtensions':
+          // Handle update extensions functionality
+          try {
+            const extensions = message.extensions as string[]
+            logger.log('Updating enabled extensions:', extensions)
+
+            await configManager.setEnabledExtensions(extensions)
+
+            // Send updated settings state
+            panel.webview.postMessage({
+              type: 'settingsState',
+              data: {
+                userRegistry:
+                  context.workspaceState.get('cursorWorkBenchUserRegistry') ||
+                  null,
+                teamRegistry: registryManager.getTeamRegistry()?.url || null,
+                userRegistryFileCount: undefined,
+                teamRegistryFileCount:
+                  registryManager.getTeamRegistry()?.files.length || undefined,
+                editorSettings: configManager.getSettings()
+              }
+            })
+          } catch (error) {
+            logger.log('Error updating extensions:', error)
           }
           return
         case 'getExtensionInfo':
@@ -350,14 +436,13 @@ export function createSettingsWebview(context: vscode.ExtensionContext): void {
   )
 }
 
-function getHtmlForWebview(
+export function getHtmlForWebview(
   webview: vscode.Webview,
   context: vscode.ExtensionContext
 ): string {
   const nonce = getNonce()
-  const timestamp = Date.now() // Add timestamp for cache busting
+  const timestamp = Date.now()
 
-  // Get the webview bundle URI
   const webviewUri = webview.asWebviewUri(
     vscode.Uri.joinPath(context.extensionUri, 'bin', 'webview.js')
   )
@@ -369,7 +454,7 @@ function getHtmlForWebview(
           <html lang="en">
           <head>
               <meta charset="UTF-8">
-              <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-${nonce}'; style-src ${webview.cspSource};">
+              <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-${nonce}'; style-src ${webview.cspSource} 'unsafe-inline'; img-src ${webview.cspSource} https: data:; font-src ${webview.cspSource};">
               <meta name="viewport" content="width=device-width, initial-scale=1.0">
               <title>Cursor Workbench Settings</title>
               <link href="${stylesUri}?v=${timestamp}&cache=false" rel="stylesheet">
@@ -378,9 +463,7 @@ function getHtmlForWebview(
               <div id="root"></div>
               <script nonce="${nonce}">
                   window.WEBVIEW_TYPE = 'settings';
-                  // Log CSS loading for debugging
                   console.log('Loading CSS from: ${stylesUri}?v=${timestamp}');
-                  // Add development reload helper
                   window.DEV_RELOAD = function() {
                       console.log('🔄 Reloading CSS...');
                       const links = document.querySelectorAll('link[rel="stylesheet"]');

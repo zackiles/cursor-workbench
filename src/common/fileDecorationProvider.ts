@@ -1,20 +1,14 @@
 import * as vscode from 'vscode'
+import * as path from 'node:path'
+import * as fs from 'node:fs'
 import { registryManager } from './registryManager'
+import { configManager } from './configManager'
 
 export class FileDecorationProvider implements vscode.FileDecorationProvider {
   private _onDidChangeFileDecorations = new vscode.EventEmitter<
     vscode.Uri | vscode.Uri[] | undefined
   >()
   readonly onDidChangeFileDecorations = this._onDidChangeFileDecorations.event
-
-  private ruleFileExtensions = [
-    '.rule',
-    '.mdc',
-    '.md',
-    '.yml',
-    '.yaml',
-    '.json'
-  ]
 
   constructor() {
     // Listen for registry changes to update decorations
@@ -23,11 +17,11 @@ export class FileDecorationProvider implements vscode.FileDecorationProvider {
     })
   }
 
-  provideFileDecoration(uri: vscode.Uri): vscode.FileDecoration | undefined {
+  async provideFileDecoration(
+    uri: vscode.Uri
+  ): Promise<vscode.FileDecoration | undefined> {
     // Only process files with supported rule extensions
-    const isRuleFile = this.ruleFileExtensions.some((ext) =>
-      uri.fsPath.toLowerCase().endsWith(ext)
-    )
+    const isRuleFile = configManager.isRuleFile(uri.fsPath)
 
     if (!isRuleFile) {
       return undefined
@@ -65,21 +59,56 @@ export class FileDecorationProvider implements vscode.FileDecorationProvider {
         // Check if this file exists in the team registry
         if (teamRegistry.files.includes(normalizedPath)) {
           const repositoryName = this.extractRepositoryName(teamRegistry.url)
-          return {
-            tooltip: `(team): ${repositoryName}`,
-            badge: 'T',
-            color: new vscode.ThemeColor(
-              'gitDecoration.modifiedResourceForeground'
-            )
+
+          try {
+            // Get the file status to determine appropriate decoration
+            const fileStatus =
+              await registryManager.getFileStatus(normalizedPath)
+
+            switch (fileStatus) {
+              case 'modified':
+                return {
+                  tooltip: `(team): ${repositoryName} - Modified`,
+                  badge: 'M',
+                  color: new vscode.ThemeColor(
+                    'gitDecoration.modifiedResourceForeground'
+                  )
+                }
+              case 'untracked':
+                return {
+                  tooltip: `(team): ${repositoryName} - Untracked`,
+                  badge: 'U',
+                  color: new vscode.ThemeColor(
+                    'gitDecoration.untrackedResourceForeground'
+                  )
+                }
+              case 'unmodified':
+                return {
+                  tooltip: `(team): ${repositoryName}`,
+                  badge: 'T',
+                  color: new vscode.ThemeColor(
+                    'gitDecoration.addedResourceForeground'
+                  )
+                }
+            }
+          } catch (error) {
+            // If we can't get file status, fall back to basic team decoration
+            return {
+              tooltip: `(team): ${repositoryName}`,
+              badge: 'T',
+              color: new vscode.ThemeColor(
+                'gitDecoration.modifiedResourceForeground'
+              )
+            }
           }
         }
       }
     }
 
-    // TODO: Add user registry support when implemented
-    // For now, we only support team registries
-
-    return undefined
+    // Return decoration for local rule files
+    return {
+      tooltip: 'Rule File'
+    }
   }
 
   private extractRepositoryName(gitUrl: string): string {

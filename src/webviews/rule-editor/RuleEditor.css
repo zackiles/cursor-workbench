@@ -1,5 +1,4 @@
 @import '../styles/base.css';
-@import '@mdxeditor/editor/style.css';
 @import '../settings/Settings.css';
 
 /* Rule Editor Styles */
@@ -52,6 +51,15 @@
     transition: background-color 0.15s ease;
 }
 
+button.status-item {
+    background: transparent;
+    border: none;
+    margin: 0;
+    font-family: inherit;
+    color: inherit;
+    text-align: left;
+}
+
 .status-item:hover {
     background: var(--vscode-list-hoverBackground, rgba(255, 255, 255, 0.1));
 }
@@ -83,10 +91,18 @@
     box-shadow: 0 0 4px rgba(239, 68, 68, 0.5);
 }
 
+.status-gray {
+    background-color: #6b7280;
+    box-shadow: 0 0 4px rgba(107, 114, 128, 0.5);
+    opacity: 0.7;
+}
+
 .status-item:hover .status-dot {
     transform: scale(1.2);
     box-shadow: 0 0 8px currentColor;
 }
+
+
 
 .gears-button {
     display: flex;
@@ -285,6 +301,7 @@
 .notes-section {
     border-bottom: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.35));
     background: var(--vscode-editor-background);
+    margin-bottom: 0;
 }
 
 .notes-toggle {
@@ -341,28 +358,97 @@
     width: 100%;
     min-height: 72px;
     max-height: 200px;
-    padding: 8px 10px;
-    background: var(--vscode-input-background, #3c3c3c);
-    color: var(--vscode-input-foreground, #cccccc);
-    border: 1px solid var(--vscode-input-border, #464647);
-    border-radius: 2px;
+    background: var(--vscode-editor-background);
+    color: var(--vscode-foreground);
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 4px;
+    padding: 12px;
+    font-family: var(--vscode-editor-font-family, 'Consolas', 'Courier New', monospace);
     font-size: 11px;
-    font-family: var(--vscode-editor-font-family, 'Consolas', monospace);
     line-height: 1.4;
-    resize: vertical;
-    transition: border-color 0.15s ease;
+    resize: none;
     box-sizing: border-box;
+    overflow-x: hidden;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: none;
 }
 
+.notes-textarea:not(:focus):hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 4px rgba(255, 255, 255, 0.1);
+}
+
+.notes-textarea:active,
 .notes-textarea:focus {
     outline: none;
-    border-color: var(--vscode-focusBorder, #007acc);
-    box-shadow: 0 0 0 1px var(--vscode-focusBorder, #007acc);
+    border-color: var(--vscode-panel-border);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3);
 }
 
 .notes-textarea::placeholder {
     color: var(--vscode-input-placeholderForeground, #888888);
     opacity: 0.6;
+}
+
+.notes-textarea::-webkit-scrollbar {
+    width: 12px;
+}
+
+.notes-textarea::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+}
+
+.notes-textarea::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+.notes-textarea::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+    background-clip: content-box;
+}
+
+/* Light theme overrides */
+@media (prefers-color-scheme: light) {
+    .notes-textarea {
+        background: var(--vscode-editor-background);
+        color: var(--vscode-foreground);
+        border: 1px solid var(--vscode-panel-border);
+    }
+
+    .notes-textarea:not(:focus):hover {
+        border-color: rgba(0, 0, 0, 0.2);
+        box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .notes-textarea:active,
+    .notes-textarea:focus {
+        outline: none;
+        border-color: var(--vscode-panel-border);
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3);
+    }
+
+    .notes-textarea::placeholder {
+        color: var(--vscode-input-placeholderForeground, #666666);
+    }
+
+    .notes-textarea::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.05);
+    }
+
+    .notes-textarea::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.2);
+    }
+
+    .notes-textarea::-webkit-scrollbar-thumb:hover {
+        background: rgba(0, 0, 0, 0.3);
+    }
 }
 
 /* Content editor container */
@@ -372,122 +458,70 @@
     overflow: auto;
     color: var(--vscode-editor-foreground, #d4d4d4);
     background: var(--vscode-editor-background, #1e1e1e);
+    border-top: none;
 }
 
-/* MDX Editor Styles */
-.vscode-mdx-editor {
-    height: 100% !important;
-    background: transparent !important;
-    color: inherit !important;
-    border: 2px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.35)) !important;
-    border-radius: 6px !important;
+/* Content textarea styling */
+.content-textarea {
+    width: 100%;
+    height: 400px;
+    min-height: 200px;
+    max-height: 80vh;
+    background: var(--vscode-editor-background);
+    color: var(--vscode-foreground);
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 4px;
+    padding: 12px;
+    font-family: var(--vscode-editor-font-family, 'Consolas', 'Courier New', monospace);
+    font-size: var(--vscode-editor-font-size, 13px);
+    line-height: 1.5;
+    resize: none;
+    outline: none;
+    box-sizing: border-box;
+    overflow-x: hidden;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: none;
 }
 
-/* Toolbar styling with better contrast */
-.mdxeditor-toolbar {
-    background: var(--vscode-titleBar-activeBackground, rgba(128, 128, 128, 0.1)) !important;
-    border-bottom: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.35)) !important;
-    padding: 8px 12px !important;
-    border-radius: 4px 4px 0 0 !important;
-    color: var(--vscode-foreground, #d4d4d4) !important;
+.content-textarea:not(:focus):hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 4px rgba(255, 255, 255, 0.1);
 }
 
-/* Content area with proper text visibility */
-.mdxeditor-root-contenteditable,
-.vscode-mdx-content {
-    font-family: var(--vscode-editor-font-family, 'Consolas', monospace) !important;
-    color: var(--vscode-editor-foreground, #d4d4d4) !important;
-    background: var(--vscode-editor-background, #1e1e1e) !important;
-    padding: 16px !important;
-    min-height: 300px !important;
-    border: none !important;
-    line-height: 1.5 !important;
-    font-size: 14px !important;
-    caret-color: var(--vscode-editorCursor-foreground, #ffffff) !important;
+.content-textarea:active,
+.content-textarea:focus {
+    outline: none;
+    border-color: var(--vscode-panel-border);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3);
 }
 
-/* MDX Editor placeholder styling with proper word wrapping */
-.mdxeditor-root-contenteditable[data-placeholder]:before,
-.mdxeditor-root-contenteditable .mdxeditor-placeholder,
-.ProseMirror .placeholder {
-    content: attr(data-placeholder) !important;
-    color: var(--vscode-input-placeholderForeground, #888888) !important;
-    opacity: 0.6 !important;
-    pointer-events: none !important;
-    position: absolute !important;
-    top: 16px !important;
-    left: 16px !important;
-    right: 16px !important;
-    white-space: pre-wrap !important;
-    word-wrap: break-word !important;
-    overflow-wrap: break-word !important;
-    hyphens: auto !important;
-    word-break: break-word !important;
-    line-height: 1.5 !important;
-    font-family: var(--vscode-editor-font-family, 'Consolas', monospace) !important;
-    font-size: 14px !important;
-    z-index: 1 !important;
+.content-textarea::placeholder {
+    color: var(--vscode-input-placeholderForeground, #888888);
+    opacity: 0.6;
 }
 
-/* Ensure placeholder wraps properly */
-.mdxeditor-root-contenteditable:empty:before {
-    content: attr(placeholder) !important;
-    color: var(--vscode-input-placeholderForeground, #888888) !important;
-    opacity: 0.6 !important;
-    white-space: pre-wrap !important;
-    word-wrap: break-word !important;
-    overflow-wrap: break-word !important;
-    hyphens: auto !important;
-    word-break: break-word !important;
-    line-height: 1.5 !important;
+.content-textarea::-webkit-scrollbar {
+    width: 12px;
 }
 
-/* Prosemirror editor theming */
-.ProseMirror {
-    color: var(--vscode-editor-foreground, #d4d4d4) !important;
-    background: var(--vscode-editor-background, #1e1e1e) !important;
-    caret-color: var(--vscode-editorCursor-foreground, #ffffff) !important;
-    outline: none !important;
-    padding: 16px !important;
-    font-family: var(--vscode-editor-font-family, 'Consolas', monospace) !important;
-    font-size: 14px !important;
-    line-height: 1.5 !important;
-    word-wrap: break-word !important;
-    overflow-wrap: break-word !important;
-    white-space: pre-wrap !important;
-    word-break: break-word !important;
+.content-textarea::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
 }
 
-/* MDX Editor content wrapping - target the specific classes */
-[class*="_contentEditable_"],
-[class*="_placeholder_"] {
-    word-wrap: break-word !important;
-    overflow-wrap: break-word !important;
-    white-space: pre-wrap !important;
-    word-break: break-word !important;
-    hyphens: auto !important;
-    max-width: 100% !important;
-    box-sizing: border-box !important;
+.content-textarea::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    border: 2px solid transparent;
+    background-clip: content-box;
 }
 
-/* Ensure all paragraphs in MDX editor wrap properly */
-.ProseMirror p,
-[class*="_contentEditable_"] p,
-.mdxeditor-root-contenteditable p {
-    word-wrap: break-word !important;
-    overflow-wrap: break-word !important;
-    white-space: pre-wrap !important;
-    word-break: break-word !important;
-    hyphens: auto !important;
-    max-width: 100% !important;
-    margin: 0 0 1em 0 !important;
-    box-sizing: border-box !important;
-}
-
-/* Selection theming */
-.ProseMirror::selection,
-.ProseMirror *::selection {
-    background: var(--vscode-editor-selectionBackground, rgba(173, 214, 255, 0.3)) !important;
+.content-textarea::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+    background-clip: content-box;
 }
 
 /* Light theme overrides for content */
@@ -515,7 +549,7 @@
     }
 
     .separator {
-        color: var(--vscode-descriptionForeground, #999999);
+        color: var(--vscode-descriptionForeground, #666666);
     }
 
     .gears-button {
@@ -537,7 +571,7 @@
     .form-select {
         background-color: var(--vscode-input-background, #ffffff) !important;
         color: var(--vscode-input-foreground, #333333) !important;
-        border: 1px solid var(--vscode-input-border, #d1d1d1) !important;
+        border: 1px solid var(--vscode-input-border, #d0d0d0) !important;
     }
 
     .select-wrapper::after {
@@ -552,7 +586,7 @@
     .form-input {
         background: var(--vscode-input-background, #ffffff);
         color: var(--vscode-input-foreground, #333333);
-        border: 1px solid var(--vscode-input-border, #d1d1d1);
+        border: 1px solid var(--vscode-input-border, #d0d0d0);
     }
 
     .form-input::placeholder {
@@ -568,41 +602,68 @@
     }
 
     .notes-textarea {
-        background: var(--vscode-input-background, #ffffff);
-        color: var(--vscode-input-foreground, #333333);
-        border: 1px solid var(--vscode-input-border, #d1d1d1);
+        background: var(--vscode-editor-background);
+        color: var(--vscode-foreground);
+        border: 1px solid var(--vscode-panel-border);
+    }
+
+    .notes-textarea:not(:focus):hover {
+        border-color: rgba(0, 0, 0, 0.2);
+        box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .notes-textarea:active,
+    .notes-textarea:focus {
+        outline: none;
+        border-color: var(--vscode-panel-border);
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3);
     }
 
     .notes-textarea::placeholder {
         color: var(--vscode-input-placeholderForeground, #666666);
     }
 
-    .mdxeditor-root-contenteditable,
-    .vscode-mdx-content {
-        color: var(--vscode-editor-foreground, #000000) !important;
-        background: var(--vscode-editor-background, #ffffff) !important;
-        caret-color: var(--vscode-editorCursor-foreground, #000000) !important;
+    .content-textarea {
+        background: var(--vscode-editor-background);
+        color: var(--vscode-foreground);
+        border: 1px solid var(--vscode-panel-border);
     }
 
-    .ProseMirror {
-        color: var(--vscode-editor-foreground, #000000) !important;
-        background: var(--vscode-editor-background, #ffffff) !important;
-        caret-color: var(--vscode-editorCursor-foreground, #000000) !important;
+    .content-textarea:not(:focus):hover {
+        border-color: rgba(0, 0, 0, 0.2);
+        box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
     }
 
-    /* Light theme word wrapping */
-    [class*="_contentEditable_"],
-    [class*="_placeholder_"],
-    .ProseMirror p,
-    [class*="_contentEditable_"] p,
-    .mdxeditor-root-contenteditable p {
-        color: var(--vscode-editor-foreground, #000000) !important;
+    .content-textarea:active,
+    .content-textarea:focus {
+        outline: none;
+        border-color: var(--vscode-panel-border);
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3);
     }
 
-    .mdxeditor-root-contenteditable[data-placeholder]:before,
-    .mdxeditor-root-contenteditable .mdxeditor-placeholder,
-    .ProseMirror .placeholder,
-    .mdxeditor-root-contenteditable:empty:before {
-        color: var(--vscode-input-placeholderForeground, #666666) !important;
+    .content-textarea::placeholder {
+        color: var(--vscode-input-placeholderForeground, #666666);
+    }
+
+    .content-textarea::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.05);
+    }
+
+    .content-textarea::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.2);
+    }
+
+    .content-textarea::-webkit-scrollbar-thumb:hover {
+        background: rgba(0, 0, 0, 0.3);
+    }
+
+    /* Form controls focus states for light theme */
+    .form-select:focus,
+    .form-input:focus,
+    .add-extension-input:focus,
+    .notes-textarea:focus {
+        outline: none;
+        border-color: var(--vscode-panel-border);
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3);
     }
 }

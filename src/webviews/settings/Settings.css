@@ -366,6 +366,182 @@
     font-size: 14px;
 }
 
+/* Editor Section */
+.editor-section {
+    margin-top: 32px;
+}
+
+.section-heading {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--vscode-foreground);
+    margin: 0 0 16px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--vscode-panel-border);
+    opacity: 0.9;
+}
+
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.setting-item:last-child {
+    border-bottom: none;
+}
+
+.setting-info {
+    flex: 1;
+}
+
+.setting-title-section {
+    display: flex;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.setting-title {
+    font-size: 14px;
+    font-weight: 500;
+    margin: 0 8px 0 0;
+    color: var(--vscode-foreground);
+}
+
+.setting-description {
+    color: var(--vscode-descriptionForeground);
+    font-size: 14px;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.setting-control {
+    flex-shrink: 0;
+    margin-left: 24px;
+    display: flex;
+    align-items: center;
+}
+
+/* Radio Switch Styles */
+.radio-switch {
+    position: relative;
+    display: inline-block;
+    width: 42px;
+    height: 22px;
+    cursor: pointer;
+}
+
+.radio-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.radio-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--vscode-input-background);
+    border: 1px solid var(--vscode-panel-border);
+    transition: 0.2s;
+    border-radius: 22px;
+}
+
+.radio-slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 2px;
+    bottom: 2px;
+    background-color: var(--vscode-foreground);
+    transition: 0.2s;
+    border-radius: 50%;
+}
+
+.radio-switch input:checked + .radio-slider {
+    background-color: var(--vscode-progressBar-background);
+    border-color: var(--vscode-progressBar-background);
+}
+
+.radio-switch input:checked + .radio-slider:before {
+    transform: translateX(20px);
+    background-color: var(--vscode-button-foreground);
+}
+
+.radio-switch input:focus + .radio-slider {
+    box-shadow: 0 0 0 2px var(--vscode-focusBorder);
+}
+
+/* Extensions List Styles */
+.extensions-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    min-width: 200px;
+}
+
+.extension-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--vscode-input-background);
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 12px;
+    padding: 4px 8px;
+    font-size: 12px;
+    color: var(--vscode-foreground);
+}
+
+.remove-extension {
+    background: none;
+    border: none;
+    color: var(--vscode-descriptionForeground);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0;
+    margin: 0;
+    line-height: 1;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.1s ease;
+}
+
+.remove-extension:hover {
+    color: var(--vscode-errorForeground);
+    background-color: var(--vscode-list-hoverBackground);
+}
+
+.add-extension-input {
+    background: transparent;
+    border: none;
+    color: var(--vscode-foreground);
+    font-size: 12px;
+    padding: 4px 8px;
+    min-width: 100px;
+    outline: none;
+    border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.add-extension-input:focus {
+    border-bottom-color: var(--vscode-focusBorder);
+}
+
+.add-extension-input::placeholder {
+    color: var(--vscode-descriptionForeground);
+    opacity: 0.7;
+}
+
 /* Preferences Section */
 .preferences-section {
     margin-top: 32px;

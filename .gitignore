@@ -15,3 +15,4 @@ node_modules
 /bin/
 /dist/
 *.vsix
+.cursor/rules/

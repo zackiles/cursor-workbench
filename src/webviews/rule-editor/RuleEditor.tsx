@@ -1,9 +1,5 @@
-import { useEffect, useState, useCallback } from 'react'
-import {
-  MDXEditor,
-  markdownShortcutPlugin,
-} from '@mdxeditor/editor'
-import type { VSCodeAPI, DocumentData, FrontmatterData } from '../../common/types'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
+import type { VSCodeAPI, DocumentData, FrontmatterData, AttachmentType } from '../../common/types'
 import './RuleEditor.css'
 
 interface RuleEditorProps {
@@ -13,57 +9,87 @@ interface RuleEditorProps {
 export const RuleEditor = ({ vscode }: RuleEditorProps) => {
   const [content, setContent] = useState('')
   const [frontmatter, setFrontmatter] = useState<FrontmatterData>({
-    rule: 'Always',
+    attachmentType: 'manual' as AttachmentType,
     globs: '',
     description: '',
-    notes: ''
+    notes: '',
+    alwaysApply: false
   })
   const [filePath, setFilePath] = useState('')
   const [workspaceRoot, setWorkspaceRoot] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isNotesExpanded, setIsNotesExpanded] = useState(false)
+  const [localStatus, setLocalStatus] = useState<'green' | 'yellow' | 'red'>('green')
+  const [remoteStatus, setRemoteStatus] = useState<'green' | 'yellow' | 'red' | 'gray'>('green')
 
-  // Parse frontmatter and content from markdown
-  const parseDocument = useCallback((markdown: string) => {
-    const frontmatterRegex = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/
-    const match = markdown.match(frontmatterRegex)
+  // Add refs to track editor mounting and textarea
+  const editorRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const isUserTypingRef = useRef(false)
+  const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const localStatusTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-    if (match) {
-      const frontmatterText = match[1]
-      const contentText = match[2]
+  // Create a stable logging function
+  const logMessage = useCallback((message: string, data?: unknown) => {
+    vscode.postMessage({ type: 'log', message, data })
+  }, [vscode])
 
-      // Parse YAML frontmatter
-      const fm: FrontmatterData = { rule: 'Always', globs: '', description: '', notes: '' }
-      for (const line of frontmatterText.split('\n')) {
-        const [key, ...valueParts] = line.split(':')
-        if (key && valueParts.length > 0) {
-          const value = valueParts.join(':').trim().replace(/^["']|["']$/g, '')
-          if (key.trim() === 'rule') fm.rule = value || 'Always'
-          if (key.trim() === 'globs') fm.globs = value
-          if (key.trim() === 'description') fm.description = value
-          if (key.trim() === 'notes') fm.notes = value
-        }
+  // Log component mount only once
+  useEffect(() => {
+    logMessage('RuleEditor component mounted')
+  }, [logMessage])
+
+  // Get status hover text
+  const getStatusHoverText = useCallback((type: 'remote' | 'local', status: 'green' | 'yellow' | 'red' | 'gray') => {
+    const prefix = type === 'remote' ? 'Remote Status: ' : 'Local Status: '
+
+    if (type === 'remote') {
+      switch (status) {
+        case 'green':
+          return `${prefix}Clean`
+        case 'yellow':
+          return `${prefix}Commits to push`
+        case 'red':
+          return `${prefix}Uncommitted changes`
+        case 'gray':
+          return `${prefix}Disabled (no remote)`
+        default:
+          return `${prefix}Unknown`
       }
-
-      setFrontmatter(fm)
-      setContent(contentText.trim())
     } else {
-      // No frontmatter found
-      setContent(markdown)
+      switch (status) {
+        case 'green':
+          return `${prefix}Saved`
+        case 'yellow':
+          return `${prefix}Unsaved changes`
+        case 'red':
+          return `${prefix}New file`
+        default:
+          return `${prefix}Unknown`
+      }
     }
   }, [])
 
-  // Combine frontmatter and content back into markdown
-  const combineDocument = useCallback((fm: FrontmatterData, contentText: string) => {
-    const frontmatterYaml = `---
-rule: "${fm.rule}"
-globs: "${fm.globs}"
-description: "${fm.description}"
-notes: "${fm.notes}"
----
+  // Update local status when user types
+  const updateLocalStatus = useCallback(() => {
+    // Clear any existing timeout
+    if (localStatusTimeoutRef.current) {
+      clearTimeout(localStatusTimeoutRef.current)
+    }
 
-${contentText}`
-    return frontmatterYaml
+    // Set status to yellow (unsaved) immediately when typing
+    if (isUserTypingRef.current) {
+      setLocalStatus('yellow')
+    }
+
+    // After user stops typing for a bit, check if content matches saved state
+    localStatusTimeoutRef.current = setTimeout(() => {
+      // This is a simplified check - in a real implementation you'd compare with saved content
+      // For now, we'll assume if user stopped typing, it's still unsaved until they save
+      if (isUserTypingRef.current) {
+        setLocalStatus('yellow')
+      }
+    }, 500)
   }, [])
 
   // Determine rule kind based on file path
@@ -134,51 +160,103 @@ ${contentText}`
     }
   }, [])
 
-  // Listen for messages from VS Code
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      const message = event.data
-      if (message.type === 'update') {
-        const data = message.data as DocumentData
-        setFilePath(data.filePath || '')
-        setWorkspaceRoot(data.workspaceRoot || '')
-        parseDocument(data.content || '')
-        setIsLoading(false)
+  // Parse frontmatter and content from markdown
+  const receiveDataFromBackend = useCallback((data: DocumentData) => {
+    // Set frontmatter from the parsed data
+    setFrontmatter(prev => {
+      // Only log if there are significant changes
+      if (data.attachmentType !== prev.attachmentType || data.globs !== prev.globs) {
+        logMessage('Received updated frontmatter from backend', {
+          attachmentType: data.attachmentType,
+          globs: data.globs
+        })
+      }
+
+      return {
+        attachmentType: data.attachmentType || 'manual',
+        globs: data.globs || '',
+        description: data.description || '',
+        notes: data.notes || '',
+        alwaysApply: data.alwaysApply !== undefined ? data.alwaysApply : (data.attachmentType === 'always'),
+        // Preserve any additional frontmatter fields
+        ...data.frontmatter
+      }
+    })
+
+    // Only update content if user is not actively typing
+    const newContent = data.content || ''
+    if (!isUserTypingRef.current) {
+      setContent(newContent)
+    }
+
+    setIsLoading(false)
+  }, [logMessage])
+
+  // Handle frontmatter field changes
+  const handleFrontmatterChange = useCallback((field: keyof FrontmatterData, value: string | AttachmentType) => {
+    const newFrontmatter = { ...frontmatter, [field]: value }
+
+    // Update alwaysApply based on attachment type
+    if (field === 'attachmentType') {
+      if (value === 'always') {
+        newFrontmatter.alwaysApply = true
+      } else {
+        newFrontmatter.alwaysApply = false
       }
     }
 
-    window.addEventListener('message', handleMessage)
-
-    // Request initial data
-    vscode.postMessage({ type: 'ready' })
-
-    return () => window.removeEventListener('message', handleMessage)
-  }, [vscode, parseDocument])
-
-  // Handle frontmatter field changes
-  const handleFrontmatterChange = useCallback((field: keyof FrontmatterData, value: string) => {
-    const newFrontmatter = { ...frontmatter, [field]: value }
     setFrontmatter(newFrontmatter)
 
-    // Send updated document to VS Code
-    const updatedMarkdown = combineDocument(newFrontmatter, content)
-    vscode.postMessage({
-      type: 'change',
-      content: updatedMarkdown
-    })
-  }, [frontmatter, content, combineDocument, vscode])
+    // Update local status to show unsaved changes
+    setLocalStatus('yellow')
 
-  // Handle content changes
+    // Send updated document to VS Code
+    vscode.postMessage({
+      type: 'update',
+      attachmentType: newFrontmatter.attachmentType,
+      globs: newFrontmatter.globs,
+      description: newFrontmatter.description,
+      notes: newFrontmatter.notes,
+      alwaysApply: newFrontmatter.alwaysApply,
+      content,
+      frontmatter: newFrontmatter
+    })
+  }, [frontmatter, content, vscode])
+
+    // Handle content changes
   const handleContentChange = useCallback((newContent: string) => {
+    // Mark that user is actively typing
+    isUserTypingRef.current = true
+
     setContent(newContent)
 
-    // Send updated document to VS Code
-    const updatedMarkdown = combineDocument(frontmatter, newContent)
-    vscode.postMessage({
-      type: 'change',
-      content: updatedMarkdown
-    })
-  }, [frontmatter, combineDocument, vscode])
+    // Update local status immediately
+    updateLocalStatus()
+
+    // Clear any existing timeout
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current)
+    }
+
+    // Debounce VS Code updates to reduce message frequency
+    updateTimeoutRef.current = setTimeout(() => {
+      vscode.postMessage({
+        type: 'update',
+        attachmentType: frontmatter.attachmentType,
+        globs: frontmatter.globs,
+        description: frontmatter.description,
+        notes: frontmatter.notes,
+        alwaysApply: frontmatter.alwaysApply,
+        content: newContent,
+        frontmatter
+      })
+
+      // Clear typing flag after sending update and a small delay
+      setTimeout(() => {
+        isUserTypingRef.current = false
+      }, 100)
+    }, 300) // Increased debounce to 300ms for better stability
+  }, [frontmatter, vscode, updateLocalStatus])
 
   // Handle settings button click
   const handleSettingsClick = useCallback(() => {
@@ -187,9 +265,55 @@ ${contentText}`
     })
   }, [vscode])
 
+  // Handle remote status click
+  const handleRemoteStatusClick = useCallback(() => {
+    vscode.postMessage({
+      type: 'remoteStatusClick',
+      status: remoteStatus,
+      filePath
+    })
+  }, [vscode, remoteStatus, filePath])
+
   const ruleKind = getRuleKind(filePath)
   const fileName = getFileNameWithoutExtension(filePath)
   const fileFormat = getFileFormat(filePath)
+
+  // Listen for messages from VS Code
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      const message = event.data
+      logMessage('Received message', message)
+
+      if (message.type === 'update') {
+        const data = message.data as DocumentData
+        logMessage('Processing update message with data', data)
+
+        setFilePath(data.filePath || '')
+        setWorkspaceRoot(data.workspaceRoot || '')
+        receiveDataFromBackend(data)
+        setLocalStatus(data.localStatus || 'green')
+        setRemoteStatus(data.remoteStatus || 'green')
+        setIsLoading(false)
+      }
+    }
+
+    window.addEventListener('message', handleMessage)
+
+    // Request initial data only once
+    logMessage('Requesting initial data from backend')
+    vscode.postMessage({ type: 'ready' })
+
+    return () => {
+      window.removeEventListener('message', handleMessage)
+      // Clean up any pending timeouts
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current)
+      }
+      if (localStatusTimeoutRef.current) {
+        clearTimeout(localStatusTimeoutRef.current)
+      }
+    }
+  }, [vscode, logMessage, receiveDataFromBackend])
 
   if (isLoading) {
     return <div className="loading">Loading...</div>
@@ -228,19 +352,30 @@ ${contentText}`
 
         {/* Status Indicators */}
         <div className="status-indicators">
-          <div className="status-item" title="Remote Connection Status">
-            <svg className="status-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-label="Globe icon">
-              <title>Globe icon</title>
+          <button
+            type="button"
+            className="status-item"
+            title={getStatusHoverText('remote', remoteStatus)}
+            onClick={handleRemoteStatusClick}
+            aria-label={getStatusHoverText('remote', remoteStatus)}
+          >
+            <svg
+              className="status-icon"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden="true"
+            >
               <path d="M12,2C6.48,2 2,6.48 2,12C2,17.52 6.48,22 12,22C17.52,22 22,17.52 22,12C22,6.48 17.52,2 12,2M11,19.93C7.05,19.44 4,16.08 4,12C4,11.38 4.08,10.79 4.21,10.21L9,15V16A2,2 0 0,0 11,18M20.75,10.5C20.38,10.4 20,10.5 19.75,10.75L18.5,12L17,10.5C16.5,10 16.5,9.5 17,9L18.5,7.5L19.75,8.75C20.38,8.38 21,8.5 21,9V10C21,10.5 20.75,10.5 20.75,10.5M20.79,13.79C20.67,16.19 18.81,18.17 16.5,18.5L15,17H14V15L12,13V10L15,7H16.5C18.26,7 19.79,8.53 20.79,10.79C20.92,11.21 21,11.6 21,12C21,12.69 20.92,13.36 20.79,13.79Z"/>
             </svg>
-            <div className="status-dot status-green" />
-          </div>
-          <div className="status-item" title="Local System Status">
-            <svg className="status-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-label="Computer icon">
-              <title>Computer icon</title>
+            <div className={`status-dot status-${remoteStatus}`} />
+          </button>
+          <div className="status-item" title={getStatusHoverText('local', localStatus)}>
+            <svg className="status-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M4,6H20V16H4M20,18A2,2 0 0,0 22,16V6C22,4.89 21.1,4 20,4H4C2.89,4 2,4.89 2,6V16A2,2 0 0,0 4,18H11V20H8V22H16V20H13V18H20Z"/>
             </svg>
-            <div className="status-dot status-green" />
+            <div className={`status-dot status-${localStatus}`} />
           </div>
         </div>
       </div>
@@ -248,23 +383,23 @@ ${contentText}`
       {/* Frontmatter Form Fields */}
       <div className="frontmatter-form">
         <div className="form-row">
-          <label htmlFor="rule-type">Attachement Type</label>
+          <label htmlFor="attachment-type">Attachment Type</label>
           <div className="select-wrapper">
             <select
-              id="rule-type"
-              value={frontmatter.rule || 'Always'}
-              onChange={(e) => handleFrontmatterChange('rule', e.target.value)}
+              id="attachment-type"
+              value={frontmatter.attachmentType || 'manual'}
+              onChange={(e) => handleFrontmatterChange('attachmentType', e.target.value as AttachmentType)}
               className="form-select"
             >
-              <option value="Always">Always</option>
-              <option value="Auto">Auto</option>
-              <option value="Agent">Agent</option>
-              <option value="Manual">Manual</option>
+              <option value="always">Always</option>
+              <option value="auto">Auto</option>
+              <option value="agent">Agent</option>
+              <option value="manual">Manual</option>
             </select>
           </div>
         </div>
 
-        {frontmatter.rule === 'Auto' && (
+        {frontmatter.attachmentType === 'auto' && (
           <div className="form-row form-row-flex">
             <label htmlFor="globs">File Patterns (Globs)</label>
             <input
@@ -278,7 +413,7 @@ ${contentText}`
           </div>
         )}
 
-        {frontmatter.rule === 'Agent' && (
+        {frontmatter.attachmentType === 'agent' && (
           <div className="form-row form-row-flex">
             <label htmlFor="description">Description</label>
             <input
@@ -293,20 +428,8 @@ ${contentText}`
         )}
       </div>
 
-      {/* Content Editor */}
-      <div className="content-editor">
-        <MDXEditor
-          className="vscode-mdx-editor"
-          markdown={content}
-          onChange={handleContentChange}
-          plugins={[
-            markdownShortcutPlugin()
-          ]}
-          placeholder="Describe the tasks this rule is helpful for, tag files with @"
-        />
-      </div>
-            {/* Notes Section with Expand/Collapse */}
-            <div className="notes-section">
+      {/* Notes Section with Expand/Collapse */}
+      <div className="notes-section">
         <button
           type="button"
           className="notes-toggle"
@@ -341,7 +464,31 @@ ${contentText}`
         )}
       </div>
 
-
+      {/* Content Editor */}
+      <div className="content-editor">
+        {process.env.NODE_ENV === 'development' && (
+          <div style={{ fontSize: '10px', color: 'var(--vscode-descriptionForeground)', marginBottom: '8px' }}>
+            Debug: isLoading={String(isLoading)}, contentLength={content.length}, content={content ? 'has content' : 'no content'}
+          </div>
+        )}
+        {isLoading ? (
+          <div style={{ padding: '20px', color: 'var(--vscode-foreground)' }}>
+            Loading editor...
+          </div>
+        ) : (
+          <div ref={editorRef}>
+            <textarea
+              ref={textareaRef}
+              className="content-textarea"
+              value={content}
+              onChange={(e) => {
+                handleContentChange(e.target.value)
+              }}
+              placeholder="Describe the tasks this rule is helpful for, tag files with @"
+            />
+          </div>
+        )}
+      </div>
     </div>
   )
 }

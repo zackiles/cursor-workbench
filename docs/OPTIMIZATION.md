@@ -40,15 +40,12 @@ node_modules/**
 Removed unused dependencies that were adding unnecessary bulk:
 
 ```json
-// Removed large, unused dependencies:
-"@mdxeditor/editor": "^3.35.0"  // ~15MB
-"react": "^18.2.0"              // ~2MB
-"react-dom": "^18.2.0"          // ~3MB
-"@types/react": "^18.2.79"
-"@types/react-dom": "^18.2.25"
+// Current dependencies are minimal and necessary:
+"react": "^19.1.0"              // ~2MB (required for webviews)
+"react-dom": "^19.1.0"          // ~3MB (required for webviews)
 ```
 
-**Impact**: Removed 267 packages, eliminating ~20MB of unused code.
+**Impact**: Maintains minimal dependency footprint with only essential React components for webview functionality.
 
 ### 3. Enhanced Build Configuration
 

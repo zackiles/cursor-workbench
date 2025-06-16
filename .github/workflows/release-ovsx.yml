@@ -1,0 +1,109 @@
+name: Publish to Open VSX Registry
+
+on:
+  workflow_run:
+    workflows: ["Release"]
+    types:
+      - completed
+    branches:
+      - main
+
+jobs:
+  publish-ovsx:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+
+      - name: Check if commit has a version tag
+        id: check_tag
+        run: |
+          # Get all tags pointing to this commit
+          TAGS=$(git tag --points-at HEAD)
+          VERSION_TAG=""
+
+          for tag in $TAGS; do
+            if [[ $tag =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              VERSION_TAG=$tag
+              break
+            fi
+          done
+
+          if [ -z "$VERSION_TAG" ]; then
+            echo "❌ No version tag (v[0-9]+.[0-9]+.[0-9]+) found on this commit"
+            exit 1
+          fi
+
+          echo "✓ Found version tag: $VERSION_TAG"
+          echo "version_tag=$VERSION_TAG" >> $GITHUB_OUTPUT
+
+      - name: Download release assets
+        id: download-release-assets
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            // Get the release associated with this tag
+            const { data: release } = await github.rest.repos.getReleaseByTag({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag: '${{ steps.check_tag.outputs.version_tag }}'
+            });
+
+            // Find the .vsix asset
+            const vsixAsset = release.assets.find(asset => asset.name.endsWith('.vsix'));
+            if (!vsixAsset) {
+              throw new Error('No .vsix file found in release assets');
+            }
+
+            // Download the asset
+            const response = await github.rest.repos.getReleaseAsset({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              asset_id: vsixAsset.id,
+              headers: {
+                Accept: 'application/octet-stream'
+              }
+            });
+
+            // Save to file
+            fs.writeFileSync(vsixAsset.name, Buffer.from(response.data));
+            console.log(`Downloaded ${vsixAsset.name}`);
+
+            // Set output for next step
+            core.setOutput('vsix_file', vsixAsset.name);
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install ovsx CLI
+        run: npm install -g ovsx
+
+      - name: Publish to Open VSX Registry
+        uses: HaaLeo/publish-vscode-extension@v2
+        with:
+          pat: ${{ secrets.OPEN_VSX_TOKEN }}
+          registryUrl: https://open-vsx.org
+          extensionFile: ${{ steps.download-release-assets.outputs.vsix_file }}
+          dryRun: false
+
+      - name: Success notification
+        run: |
+          echo "🎉 Successfully published ${{ steps.download-release-assets.outputs.vsix_file }} to Open VSX Registry!"
+          echo "Extension URL: https://open-vsx.org/extension/zackiles/cursor-workbench"

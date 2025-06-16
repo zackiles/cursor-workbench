@@ -75,7 +75,7 @@ async function build() {
       webviewCtx.watch(),
       cssCtx.watch()
     ])
-    // Keep process alive
+
     process.stdin.resume()
   } else {
     // Build once
