@@ -147,7 +147,7 @@
     "@types/react-dom": "^19.1.6",
     "@types/vscode": "^1.85.0",
     "esbuild": "^0.19.12",
-    "ovsx": "^0.9.10",
+    "ovsx": "^0.10.4",
     "typescript": "^5.4.5",
     "vsce": "^2.15.0"
   }
