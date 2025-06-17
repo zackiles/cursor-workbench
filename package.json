@@ -1,5 +1,5 @@
 {
-  "name": "@zackiles/cursor-workbench",
+  "name": "cursor-workbench",
   "displayName": "Cursor Workbench - Rule Editor",
   "version": "0.0.1",
   "description": "Advanced rule editor for Cursor IDE with team collaboration, Git synchronization, and intelligent frontmatter management",
