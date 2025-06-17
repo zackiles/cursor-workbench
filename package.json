@@ -120,7 +120,7 @@
     "package": "node scripts/build.js --production",
     "test": "node scripts/build.js --dev && node scripts/test.js",
     "test:local": "echo 'Running local tests...' && npm run build",
-    "verify:package": "echo 'Verifying package...' && ls -la *.vsix",
+    "verify:package": "echo 'Verifying package...' && ls -la dist/*.vsix",
     "release:ovsx": "ovsx publish --pat $OPEN_VSX_TOKEN",
     "dev": "node scripts/build.js --dev && open -a 'Visual Studio Code' --args --disable-extensions --enable-proposed-api --extensionDevelopmentPath=\"$PWD\" \"$PWD\" & node scripts/build.js --dev --watch",
     "dev:isolated": "node scripts/build.js --dev && code --disable-extensions --enable-proposed-api --extensionDevelopmentPath=\"$PWD\" \"$PWD\""
