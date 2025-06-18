@@ -1,7 +1,7 @@
 {
   "name": "cursor-workbench",
   "displayName": "Cursor Workbench - Rule Editor",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Advanced rule editor for Cursor IDE with team collaboration, Git synchronization, and intelligent frontmatter management",
   "publisher": "zackiles",
   "icon": "logo.png",
@@ -49,6 +49,12 @@
         "priority": "default"
       }
     ],
+    "configurationDefaults": {
+      "workbench.editorAssociations": {
+        "*.rule": "customFileEditor",
+        "*.mdc": "customFileEditor"
+      }
+    },
     "views": {
       "explorer": [
         {

@@ -70,6 +70,31 @@ export async function activate(context: vscode.ExtensionContext) {
   const providerRegistration = RuleEditorProvider.register(context)
   context.subscriptions.push(providerRegistration)
 
+  // Force our custom editor to be the default for .rule and .mdc files
+  const editorAssociations =
+    vscode.workspace.getConfiguration('workbench').get('editorAssociations') ||
+    {}
+  const updatedAssociations = {
+    ...editorAssociations,
+    '*.rule': 'customFileEditor',
+    '*.mdc': 'customFileEditor'
+  }
+
+  try {
+    await vscode.workspace
+      .getConfiguration('workbench')
+      .update(
+        'editorAssociations',
+        updatedAssociations,
+        vscode.ConfigurationTarget.Global
+      )
+    logger.log(
+      'Set editor associations for .rule and .mdc files to use custom editor'
+    )
+  } catch (error) {
+    logger.log('Failed to set editor associations:', error)
+  }
+
   // Mark as default editor on first installation only
   if (configManager.isFirstInstallation()) {
     logger.log(
