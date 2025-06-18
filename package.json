@@ -1,7 +1,7 @@
 {
   "name": "cursor-workbench",
   "displayName": "Cursor Workbench - Rule Editor",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Advanced rule editor for Cursor IDE with team collaboration, Git synchronization, and intelligent frontmatter management",
   "publisher": "zackiles",
   "icon": "logo.png",
