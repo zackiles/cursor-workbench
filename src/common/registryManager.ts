@@ -821,12 +821,15 @@ class RegistryManager {
         '.cursor'
       ])
 
-      // Step 3: Checkout the main branch to populate only .cursor directory
+      // Step 3: Get the default branch
+      const defaultBranch = await this.getDefaultBranch(repoPath)
+
+      // Step 4: Checkout the main branch to populate only .cursor directory
       await this.executeGitCommandDirect('git', [
         '-C',
         repoPath,
         'checkout',
-        'main'
+        defaultBranch
       ])
 
       // Verify .cursor directory exists
@@ -886,6 +889,16 @@ class RegistryManager {
         reject(new Error(`Git command failed: ${error.message}`))
       })
     })
+  }
+
+  private async getDefaultBranch(repoPath: string): Promise<string> {
+    const branch = await this.executeGitCommandDirect("git", [
+      "-C",
+      repoPath,
+      "symbolic-ref",
+      "refs/remotes/origin/HEAD",
+    ]);
+    return branch.trim().split("/").pop() || "main";
   }
 
   private async removeDirectory(dirPath: string): Promise<void> {
