@@ -16,8 +16,7 @@
     "Other"
   ],
   "activationEvents": [
-    "onCustomEditor:customFileEditor",
-    "onFileSystem:cursorfs"
+    "onStartupFinished"
   ],
   "main": "./bin/extension.js",
   "enabledApiProposals": [

@@ -12,46 +12,6 @@ import {
 } from './settings/SettingsProvider'
 import { logger } from './common/logger'
 
-async function registerAsDefaultEditor(): Promise<void> {
-  const extensions = configManager.getEnabledExtensions()
-
-  for (const ext of extensions) {
-    const selector = `*${ext}`
-    try {
-      await vscode.commands.executeCommand(
-        'workbench.action.setDefaultEditor',
-        selector,
-        'customFileEditor'
-      )
-      logger.log(`Registered as default editor for ${ext}`)
-    } catch (error) {
-      logger.log(`Failed to register as default editor for ${ext}:`, error)
-    }
-  }
-
-  await configManager.setIsDefaultRuleEditor(true)
-}
-
-async function unregisterAsDefaultEditor(): Promise<void> {
-  const extensions = configManager.getEnabledExtensions()
-
-  for (const ext of extensions) {
-    const selector = `*${ext}`
-    try {
-      await vscode.commands.executeCommand(
-        'workbench.action.resetDefaultEditor',
-        selector
-      )
-      logger.log(`Reset default editor for ${ext}`)
-    } catch (error) {
-      logger.log(`Failed to reset default editor for ${ext}:`, error)
-    }
-  }
-
-  await configManager.setIsDefaultRuleEditor(false)
-  logger.log('Unregistered as default rule editor')
-}
-
 async function openTestRuleIfNeeded(
   context: vscode.ExtensionContext
 ): Promise<void> {
@@ -106,18 +66,16 @@ export async function activate(context: vscode.ExtensionContext) {
   await configManager.initialize(context)
   await registryManager.initialize(context)
 
+  // Register the custom editor provider
   const providerRegistration = RuleEditorProvider.register(context)
   context.subscriptions.push(providerRegistration)
 
-  const isDefaultRuleEditor = configManager.getSettings().isDefaultRuleEditor
-
-  if (isDefaultRuleEditor) {
-    await registerAsDefaultEditor()
-  } else if (configManager.isFirstInstallation()) {
+  // Mark as default editor on first installation only
+  if (configManager.isFirstInstallation()) {
     logger.log(
-      'First installation detected - enabling custom editor for configured extensions'
+      'First installation detected - custom editor will be used for configured extensions'
     )
-    await registerAsDefaultEditor()
+    await configManager.setIsDefaultRuleEditor(true)
   }
 
   if (env === 'development') {
@@ -202,10 +160,16 @@ export async function activate(context: vscode.ExtensionContext) {
     'cursorWorkbench.toggleCustomEditor',
     async (enabled: boolean) => {
       logger.log('Toggling custom editor via command:', enabled)
+      await configManager.setIsDefaultRuleEditor(enabled)
+
       if (enabled) {
-        await registerAsDefaultEditor()
+        vscode.window.showInformationMessage(
+          'Custom editor enabled. VS Code will use the Rule Editor for .rule and .mdc files.'
+        )
       } else {
-        await unregisterAsDefaultEditor()
+        vscode.window.showInformationMessage(
+          'Custom editor disabled. VS Code will use the default text editor for .rule and .mdc files.'
+        )
       }
     }
   )
