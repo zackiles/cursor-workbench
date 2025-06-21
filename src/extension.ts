@@ -1,4 +1,6 @@
 import * as vscode from 'vscode'
+import * as fs from 'node:fs'
+import * as path from 'node:path'
 import { configManager } from './common/configManager'
 import { fileDecorationProvider } from './common/fileDecorationProvider'
 import { logger } from './common/logger'
@@ -11,6 +13,35 @@ import {
   getHtmlForWebview,
   refreshSettingsWebview
 } from './settings/SettingsProvider'
+
+// Copy latest build artifacts from source to target directory
+function copyLatestBuild(sourceDir: string, targetDir: string) {
+  try {
+    const sourceBinDir = path.join(sourceDir, 'bin')
+    const targetBinDir = path.join(targetDir, 'bin')
+
+    // Ensure target bin directory exists
+    if (!fs.existsSync(targetBinDir)) {
+      fs.mkdirSync(targetBinDir, { recursive: true })
+    }
+
+    // Copy build artifacts if they exist
+    const filesToCopy = ['extension.js', 'webview.js', 'webview.css']
+
+    for (const file of filesToCopy) {
+      const sourcePath = path.join(sourceBinDir, file)
+      const targetPath = path.join(targetBinDir, file)
+
+      if (fs.existsSync(sourcePath)) {
+        fs.copyFileSync(sourcePath, targetPath)
+      }
+    }
+
+    logger.log('Latest build artifacts copied to extension directory')
+  } catch (error) {
+    logger.log('Failed to copy latest build artifacts:', error)
+  }
+}
 
 async function openTestRuleIfNeeded(
   context: vscode.ExtensionContext
@@ -105,13 +136,19 @@ export async function activate(context: vscode.ExtensionContext) {
   }
 
   if (env === 'development') {
-    const extensionPath = context.extensionPath
+    // Use PROJECT_SOURCE_DIR environment variable if available (for dev script)
+    // Otherwise fall back to extension path for regular development
+    const sourceDir = process.env.PROJECT_SOURCE_DIR || context.extensionPath
     const watcher = vscode.workspace.createFileSystemWatcher(
-      new vscode.RelativePattern(extensionPath, 'bin/**/*.js')
+      new vscode.RelativePattern(sourceDir, 'bin/**/*.js')
     )
 
     watcher.onDidChange(() => {
       logger.log('Extension files changed. Reloading window...')
+      // If using dev script, copy latest build from source to extension directory
+      if (process.env.PROJECT_SOURCE_DIR) {
+        copyLatestBuild(sourceDir, context.extensionPath)
+      }
       vscode.commands.executeCommand('workbench.action.reloadWindow')
     })
 
@@ -149,7 +186,20 @@ export async function activate(context: vscode.ExtensionContext) {
 
   const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
   const rulesProvider = new RulesTreeProvider(workspaceRoot)
-  vscode.window.registerTreeDataProvider('rulesExplorer', rulesProvider)
+  const treeView = vscode.window.createTreeView('rulesExplorer', {
+    treeDataProvider: rulesProvider,
+    showCollapseAll: true
+  })
+
+  treeView.onDidChangeVisibility(() => {
+    if (treeView.visible) {
+      rulesProvider.refresh()
+    }
+  })
+
+  context.subscriptions.push(treeView)
+
+  rulesProvider.refresh()
 
   const refreshCommand = vscode.commands.registerCommand(
     'rulesExplorer.refresh',

@@ -11,9 +11,36 @@ export class RulesTreeItem extends vscode.TreeItem {
     public readonly collapsibleState: vscode.TreeItemCollapsibleState,
     public readonly resourceUri?: vscode.Uri,
     public readonly isFile: boolean = false,
-    public readonly registryType?: 'team' | 'user' | 'local'
+    public readonly registryType?: 'team' | 'user' | 'local',
+    public readonly itemType?:
+      | 'localRoot'
+      | 'teamRoot'
+      | 'addRegistry'
+      | 'folder'
+      | 'file'
   ) {
     super(label, collapsibleState)
+
+    if (itemType === 'addRegistry') {
+      this.command = {
+        command: 'rulesExplorer.settings',
+        title: 'Add Registry'
+      }
+      this.contextValue = 'addRegistry'
+      return
+    }
+
+    if (itemType === 'localRoot') {
+      this.contextValue = 'localRoot'
+      this.iconPath = new vscode.ThemeIcon('folder')
+      return
+    }
+
+    if (itemType === 'teamRoot') {
+      this.contextValue = 'teamRoot'
+      this.iconPath = new vscode.ThemeIcon('organization')
+      return
+    }
 
     if (isFile && resourceUri) {
       this.command = {
@@ -22,7 +49,6 @@ export class RulesTreeItem extends vscode.TreeItem {
         arguments: [resourceUri]
       }
 
-      // Set context value and icon based on registry type
       if (registryType === 'team') {
         this.contextValue = 'virtualRuleFile'
         this.iconPath = new vscode.ThemeIcon('organization')
@@ -50,7 +76,6 @@ export class RulesTreeProvider
     this._onDidChangeTreeData.event
 
   constructor(private workspaceRoot: string | undefined) {
-    // Listen for registry changes and refresh the tree
     registryManager.onDidChangeRegistry(() => {
       this.refresh()
     })
@@ -69,216 +94,283 @@ export class RulesTreeProvider
       return Promise.resolve([])
     }
 
-    const rulesPath = path.join(this.workspaceRoot, '.cursor', 'rules')
-
     if (!element) {
-      // Root level - return folders and files in .cursor/rules
-      return this.getRulesStructure(rulesPath)
-    } else {
-      // Get children of a folder
-      if (element.resourceUri && !element.isFile) {
-        return this.getDirectoryContents(element.resourceUri.fsPath)
-      }
-      return Promise.resolve([])
+      return this.getRootItems()
     }
+
+    if (element.itemType === 'localRoot') {
+      return this.getLocalRulesChildren()
+    }
+
+    if (element.itemType === 'teamRoot') {
+      return this.getTeamRulesChildren()
+    }
+
+    if (element.resourceUri && !element.isFile) {
+      const regType = element.registryType === 'team' ? 'team' : 'local'
+      return this.getDirectoryContents(element.resourceUri.fsPath, regType)
+    }
+
+    return Promise.resolve([])
   }
 
-  private async getRulesStructure(rulesPath: string): Promise<RulesTreeItem[]> {
+  private async getRootItems(): Promise<RulesTreeItem[]> {
+    const items: RulesTreeItem[] = []
+
+    const hasLocalRules = await this.hasLocalRules()
+    if (hasLocalRules) {
+      items.push(
+        new RulesTreeItem(
+          'Local Rules',
+          vscode.TreeItemCollapsibleState.Expanded,
+          undefined,
+          false,
+          'local',
+          'localRoot'
+        )
+      )
+    }
+
+    const teamRegistry = registryManager.getTeamRegistry()
+    if (teamRegistry && teamRegistry.files.length > 0) {
+      items.push(
+        new RulesTreeItem(
+          'Team Rules',
+          vscode.TreeItemCollapsibleState.Expanded,
+          undefined,
+          false,
+          'team',
+          'teamRoot'
+        )
+      )
+    } else if (!teamRegistry) {
+      items.push(
+        new RulesTreeItem(
+          '+ Add Registry',
+          vscode.TreeItemCollapsibleState.None,
+          undefined,
+          false,
+          undefined,
+          'addRegistry'
+        )
+      )
+    }
+
+    return items
+  }
+
+  private async hasLocalRules(): Promise<boolean> {
+    if (!this.workspaceRoot) return false
+    const rulesPath = path.join(this.workspaceRoot, '.cursor', 'rules')
+
     try {
-      const items: RulesTreeItem[] = []
-      const addedPaths = new Set<string>() // Track added file paths to avoid duplicates
-      const folderNames = new Set<string>() // Track folder names
+      if (!fs.existsSync(rulesPath)) {
+        return false
+      }
 
-      // Add local files if they exist
-      if (fs.existsSync(rulesPath)) {
-        const entries = await fs.promises.readdir(rulesPath, {
-          withFileTypes: true
-        })
+      const entries = await fs.promises.readdir(rulesPath, {
+        withFileTypes: true
+      })
 
-        // Sort: folders first, then files
-        entries.sort((a, b) => {
-          if (a.isDirectory() && !b.isDirectory()) return -1
-          if (!a.isDirectory() && b.isDirectory()) return 1
-          return a.name.localeCompare(b.name)
-        })
-
-        for (const entry of entries) {
-          const fullPath = path.join(rulesPath, entry.name)
-          const uri = vscode.Uri.file(fullPath)
-
-          if (entry.isDirectory()) {
-            folderNames.add(entry.name)
-            const hasChildren = await this.hasRuleFiles(fullPath)
-            items.push(
-              new RulesTreeItem(
-                entry.name,
-                hasChildren
-                  ? vscode.TreeItemCollapsibleState.Collapsed
-                  : vscode.TreeItemCollapsibleState.None,
-                uri,
-                false,
-                'local'
-              )
-            )
-          } else if (this.isRuleFile(entry.name)) {
-            items.push(
-              new RulesTreeItem(
-                entry.name,
-                vscode.TreeItemCollapsibleState.None,
-                uri,
-                true,
-                'local'
-              )
-            )
-            addedPaths.add(entry.name)
-          }
+      for (const entry of entries) {
+        if (entry.isDirectory()) {
+          const hasNested = await this.hasRuleFiles(
+            path.join(rulesPath, entry.name)
+          )
+          if (hasNested) return true
+        } else if (this.isRuleFile(entry.name)) {
+          return true
         }
       }
 
-      // Add virtual files from team registry that belong at this level
-      const teamRegistry = registryManager.getTeamRegistry()
-      if (teamRegistry && this.workspaceRoot) {
-        // Get the relative path from workspace root to current rules path
-        const relativePath = path
-          .relative(this.workspaceRoot, rulesPath)
-          .replace(/\\/g, '/')
+      return false
+    } catch (error) {
+      return false
+    }
+  }
 
-        for (const virtualFile of teamRegistry.files) {
-          // Normalize the virtual file path
-          const normalizedVirtualFile = virtualFile.replace(/\\/g, '/')
-          const virtualFileDir = path
-            .dirname(normalizedVirtualFile)
-            .replace(/\\/g, '/')
-          const fileName = path.basename(virtualFile)
+  private async getLocalRulesChildren(): Promise<RulesTreeItem[]> {
+    if (!this.workspaceRoot) return []
+    const rulesPath = path.join(this.workspaceRoot, '.cursor', 'rules')
 
-          // Check if this virtual file belongs at the current directory level
-          if (virtualFileDir === relativePath) {
-            // Skip if we already have this file locally at this exact path
-            if (addedPaths.has(fileName)) {
-              continue
-            }
+    try {
+      const items: RulesTreeItem[] = []
 
-            const virtualPath = path.join(this.workspaceRoot, virtualFile)
-            const cursorfsUri = vscode.Uri.parse(`cursorfs:${virtualPath}`)
+      if (!fs.existsSync(rulesPath)) {
+        return items
+      }
 
-            // Create virtual tree item with cursorfs scheme
-            const virtualItem = new RulesTreeItem(
-              `${fileName} (team)`,
-              vscode.TreeItemCollapsibleState.None,
-              cursorfsUri,
-              true,
-              'team'
+      const entries = await fs.promises.readdir(rulesPath, {
+        withFileTypes: true
+      })
+
+      entries.sort((a, b) => {
+        if (a.isDirectory() && !b.isDirectory()) return -1
+        if (!a.isDirectory() && b.isDirectory()) return 1
+        return a.name.localeCompare(b.name)
+      })
+
+      for (const entry of entries) {
+        const fullPath = path.join(rulesPath, entry.name)
+        const uri = vscode.Uri.file(fullPath)
+
+        if (entry.isDirectory()) {
+          const hasChildren = await this.hasRuleFiles(fullPath)
+          items.push(
+            new RulesTreeItem(
+              entry.name,
+              hasChildren
+                ? vscode.TreeItemCollapsibleState.Collapsed
+                : vscode.TreeItemCollapsibleState.None,
+              uri,
+              false,
+              'local',
+              'folder'
             )
-
-            // Add special styling for virtual files
-            virtualItem.tooltip = `Virtual file from team registry: ${virtualFile}`
-
-            items.push(virtualItem)
-            addedPaths.add(fileName)
-          }
+          )
+        } else if (this.isRuleFile(entry.name)) {
+          items.push(
+            new RulesTreeItem(
+              entry.name,
+              vscode.TreeItemCollapsibleState.None,
+              uri,
+              true,
+              'local',
+              'file'
+            )
+          )
         }
       }
 
       return items
     } catch (error) {
-      logger.log('Error reading rules directory', error)
+      logger.log('Error reading local rules', error)
       return []
     }
   }
 
+  private async getTeamRulesChildren(): Promise<RulesTreeItem[]> {
+    const teamRegistry = registryManager.getTeamRegistry()
+    if (!teamRegistry || !this.workspaceRoot) {
+      return []
+    }
+
+    const items: RulesTreeItem[] = []
+    const folders = new Set<string>()
+    const files: string[] = []
+
+    for (const virtualFile of teamRegistry.files) {
+      const normalizedPath = virtualFile.replace(/\\/g, '/')
+      const segments = normalizedPath.split('/')
+
+      if (segments.length > 1) {
+        folders.add(segments[0])
+      } else {
+        files.push(virtualFile)
+      }
+    }
+
+    const sortedFolders = Array.from(folders).sort()
+    for (const folderName of sortedFolders) {
+      const virtualPath = path.join(
+        this.workspaceRoot,
+        '.cursor',
+        'rules',
+        folderName
+      )
+      const cursorfsUri = vscode.Uri.parse(`cursorfs:${virtualPath}`)
+
+      items.push(
+        new RulesTreeItem(
+          folderName,
+          vscode.TreeItemCollapsibleState.Collapsed,
+          cursorfsUri,
+          false,
+          'team',
+          'folder'
+        )
+      )
+    }
+
+    for (const fileName of files.sort()) {
+      const virtualPath = path.join(
+        this.workspaceRoot,
+        '.cursor',
+        'rules',
+        fileName
+      )
+      const cursorfsUri = vscode.Uri.parse(`cursorfs:${virtualPath}`)
+
+      const virtualItem = new RulesTreeItem(
+        fileName,
+        vscode.TreeItemCollapsibleState.None,
+        cursorfsUri,
+        true,
+        'team',
+        'file'
+      )
+
+      virtualItem.tooltip = `Virtual file from team registry: ${fileName}`
+      items.push(virtualItem)
+    }
+
+    return items
+  }
+
   private async getDirectoryContents(
-    dirPath: string
+    dirPath: string,
+    registryType: 'local' | 'team'
   ): Promise<RulesTreeItem[]> {
+    if (registryType === 'team') {
+      return this.getTeamDirectoryContents(dirPath)
+    }
+
     try {
       const items: RulesTreeItem[] = []
-      const addedPaths = new Set<string>() // Track added file paths to avoid duplicates
 
-      // Add local files
-      if (fs.existsSync(dirPath)) {
-        const entries = await fs.promises.readdir(dirPath, {
-          withFileTypes: true
-        })
-
-        // Sort: folders first, then files
-        entries.sort((a, b) => {
-          if (a.isDirectory() && !b.isDirectory()) return -1
-          if (!a.isDirectory() && b.isDirectory()) return 1
-          return a.name.localeCompare(b.name)
-        })
-
-        for (const entry of entries) {
-          const fullPath = path.join(dirPath, entry.name)
-          const uri = vscode.Uri.file(fullPath)
-
-          if (entry.isDirectory()) {
-            const hasChildren = await this.hasRuleFiles(fullPath)
-            items.push(
-              new RulesTreeItem(
-                entry.name,
-                hasChildren
-                  ? vscode.TreeItemCollapsibleState.Collapsed
-                  : vscode.TreeItemCollapsibleState.None,
-                uri,
-                false,
-                'local'
-              )
-            )
-          } else if (this.isRuleFile(entry.name)) {
-            items.push(
-              new RulesTreeItem(
-                entry.name,
-                vscode.TreeItemCollapsibleState.None,
-                uri,
-                true,
-                'local'
-              )
-            )
-            addedPaths.add(entry.name)
-          }
-        }
+      if (!fs.existsSync(dirPath)) {
+        return items
       }
 
-      // Add virtual files from team registry that belong at this directory level
-      const teamRegistry = registryManager.getTeamRegistry()
-      if (teamRegistry && this.workspaceRoot) {
-        // Get the relative path from workspace root to current directory
-        const relativePath = path
-          .relative(this.workspaceRoot, dirPath)
-          .replace(/\\/g, '/')
+      const entries = await fs.promises.readdir(dirPath, {
+        withFileTypes: true
+      })
 
-        for (const virtualFile of teamRegistry.files) {
-          // Normalize the virtual file path
-          const normalizedVirtualFile = virtualFile.replace(/\\/g, '/')
-          const virtualFileDir = path
-            .dirname(normalizedVirtualFile)
-            .replace(/\\/g, '/')
-          const fileName = path.basename(virtualFile)
+      entries.sort((a, b) => {
+        if (a.isDirectory() && !b.isDirectory()) return -1
+        if (!a.isDirectory() && b.isDirectory()) return 1
+        return a.name.localeCompare(b.name)
+      })
 
-          // Check if this virtual file belongs at the current directory level
-          if (virtualFileDir === relativePath) {
-            // Skip if we already have this file locally at this exact path
-            if (addedPaths.has(fileName)) {
-              continue
-            }
+      for (const entry of entries) {
+        const fullPath = path.join(dirPath, entry.name)
+        const uri = vscode.Uri.file(fullPath)
 
-            const virtualPath = path.join(this.workspaceRoot, virtualFile)
-            const cursorfsUri = vscode.Uri.parse(`cursorfs:${virtualPath}`)
-
-            // Create virtual tree item with cursorfs scheme
-            const virtualItem = new RulesTreeItem(
-              `${fileName} (team)`,
-              vscode.TreeItemCollapsibleState.None,
-              cursorfsUri,
-              true,
-              'team'
+        if (entry.isDirectory()) {
+          const hasChildren = await this.hasRuleFiles(fullPath)
+          items.push(
+            new RulesTreeItem(
+              entry.name,
+              hasChildren
+                ? vscode.TreeItemCollapsibleState.Collapsed
+                : vscode.TreeItemCollapsibleState.None,
+              uri,
+              false,
+              'local',
+              'folder'
             )
-
-            // Add special styling for virtual files
-            virtualItem.tooltip = `Virtual file from team registry: ${virtualFile}`
-
-            items.push(virtualItem)
-            addedPaths.add(fileName)
-          }
+          )
+        } else if (this.isRuleFile(entry.name)) {
+          items.push(
+            new RulesTreeItem(
+              entry.name,
+              vscode.TreeItemCollapsibleState.None,
+              uri,
+              true,
+              'local',
+              'file'
+            )
+          )
         }
       }
 
@@ -289,46 +381,91 @@ export class RulesTreeProvider
     }
   }
 
-  private async hasRuleFiles(dirPath: string): Promise<boolean> {
-    try {
-      // Check local files first
-      if (fs.existsSync(dirPath)) {
-        const entries = await fs.promises.readdir(dirPath, {
-          withFileTypes: true
-        })
+  private async getTeamDirectoryContents(
+    dirPath: string
+  ): Promise<RulesTreeItem[]> {
+    const teamRegistry = registryManager.getTeamRegistry()
+    if (!teamRegistry || !this.workspaceRoot) {
+      return []
+    }
 
-        for (const entry of entries) {
-          if (entry.isDirectory()) {
-            const hasNested = await this.hasRuleFiles(
-              path.join(dirPath, entry.name)
-            )
-            if (hasNested) return true
-          } else if (this.isRuleFile(entry.name)) {
-            return true
-          }
+    const items: RulesTreeItem[] = []
+    const relativePath = path
+      .relative(path.join(this.workspaceRoot, '.cursor', 'rules'), dirPath)
+      .replace(/\\/g, '/')
+    const folders = new Set<string>()
+    const files: string[] = []
+
+    for (const virtualFile of teamRegistry.files) {
+      const normalizedPath = virtualFile.replace(/\\/g, '/')
+
+      if (normalizedPath.startsWith(`${relativePath}/`)) {
+        const remainingPath = normalizedPath.substring(relativePath.length + 1)
+        const segments = remainingPath.split('/')
+
+        if (segments.length > 1) {
+          folders.add(segments[0])
+        } else {
+          files.push(remainingPath)
         }
       }
+    }
 
-      // Check for virtual files in this directory or subdirectories
-      const teamRegistry = registryManager.getTeamRegistry()
-      if (teamRegistry && this.workspaceRoot) {
-        const relativePath = path
-          .relative(this.workspaceRoot, dirPath)
-          .replace(/\\/g, '/')
+    const sortedFolders = Array.from(folders).sort()
+    for (const folderName of sortedFolders) {
+      const virtualPath = path.join(dirPath, folderName)
+      const cursorfsUri = vscode.Uri.parse(`cursorfs:${virtualPath}`)
 
-        for (const virtualFile of teamRegistry.files) {
-          const normalizedVirtualFile = virtualFile.replace(/\\/g, '/')
-          const virtualFileDir = path
-            .dirname(normalizedVirtualFile)
-            .replace(/\\/g, '/')
+      items.push(
+        new RulesTreeItem(
+          folderName,
+          vscode.TreeItemCollapsibleState.Collapsed,
+          cursorfsUri,
+          false,
+          'team',
+          'folder'
+        )
+      )
+    }
 
-          // Check if this virtual file is in this directory or a subdirectory
-          if (
-            virtualFileDir === relativePath ||
-            virtualFileDir.startsWith(`${relativePath}/`)
-          ) {
-            return true
-          }
+    for (const fileName of files.sort()) {
+      const virtualPath = path.join(dirPath, fileName)
+      const cursorfsUri = vscode.Uri.parse(`cursorfs:${virtualPath}`)
+
+      const virtualItem = new RulesTreeItem(
+        fileName,
+        vscode.TreeItemCollapsibleState.None,
+        cursorfsUri,
+        true,
+        'team',
+        'file'
+      )
+
+      virtualItem.tooltip = `Virtual file from team registry: ${path.join(relativePath, fileName)}`
+      items.push(virtualItem)
+    }
+
+    return items
+  }
+
+  private async hasRuleFiles(dirPath: string): Promise<boolean> {
+    try {
+      if (!fs.existsSync(dirPath)) {
+        return false
+      }
+
+      const entries = await fs.promises.readdir(dirPath, {
+        withFileTypes: true
+      })
+
+      for (const entry of entries) {
+        if (entry.isDirectory()) {
+          const hasNested = await this.hasRuleFiles(
+            path.join(dirPath, entry.name)
+          )
+          if (hasNested) return true
+        } else if (this.isRuleFile(entry.name)) {
+          return true
         }
       }
 
@@ -348,7 +485,6 @@ export class RulesTreeProvider
       return
     }
 
-    // TODO: Implement individual file sync functionality
     const fileName = path.basename(item.resourceUri.fsPath)
     vscode.window.showInformationMessage(
       `Sync functionality for "${fileName}" coming soon!`
