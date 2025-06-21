@@ -1,9 +1,9 @@
-import * as vscode from 'vscode'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
+import * as vscode from 'vscode'
+import { configManager } from '../common/configManager'
 import { logger } from '../common/logger'
 import { registryManager } from '../common/registryManager'
-import { configManager } from '../common/configManager'
 
 export class RulesTreeItem extends vscode.TreeItem {
   constructor(

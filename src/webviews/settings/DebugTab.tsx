@@ -1,5 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import type { VSCodeAPI, LogEntry, ExtensionInfo, ExtensionInfoResponse } from '../../common/types'
+import type {
+  ExtensionInfo,
+  ExtensionInfoResponse,
+  LogEntry,
+  VSCodeAPI
+} from '../../common/types'
 
 interface DebugTabProps {
   vscode: VSCodeAPI
@@ -10,16 +15,19 @@ export const DebugTab = ({ vscode }: DebugTabProps) => {
   const [isLoading, setIsLoading] = useState(false)
   const terminalRef = useRef<HTMLDivElement>(null)
 
-  const addLog = useCallback((level: LogEntry['level'], message: string, data?: unknown) => {
-    const newLog: LogEntry = {
-      id: `${Date.now()}-${Math.random()}`,
-      timestamp: new Date().toLocaleTimeString(),
-      level,
-      message,
-      data
-    }
-    setLogs(prev => [...prev, newLog])
-  }, [])
+  const addLog = useCallback(
+    (level: LogEntry['level'], message: string, data?: unknown) => {
+      const newLog: LogEntry = {
+        id: `${Date.now()}-${Math.random()}`,
+        timestamp: new Date().toLocaleTimeString(),
+        level,
+        message,
+        data
+      }
+      setLogs((prev) => [...prev, newLog])
+    },
+    []
+  )
 
   const clearLogs = () => {
     setLogs([])
@@ -41,9 +49,13 @@ export const DebugTab = ({ vscode }: DebugTabProps) => {
       const message = event.data
       if (message.type === 'extensionInfo') {
         setIsLoading(false)
-        const { cursorExtensions, allExtensions } = message.data as ExtensionInfoResponse
+        const { cursorExtensions, allExtensions } =
+          message.data as ExtensionInfoResponse
 
-        addLog('info', `Found ${cursorExtensions.length} Cursor-related extensions`)
+        addLog(
+          'info',
+          `Found ${cursorExtensions.length} Cursor-related extensions`
+        )
         addLog('info', `Total extensions scanned: ${allExtensions.length}`)
 
         // Log Cursor extensions with detailed info
@@ -58,7 +70,10 @@ export const DebugTab = ({ vscode }: DebugTabProps) => {
 
         // Only log non-cursor extensions if there are very few total extensions (for debugging)
         if (allExtensions.length < 10) {
-          addLog('warn', 'Very few extensions found - showing all for debugging:')
+          addLog(
+            'warn',
+            'Very few extensions found - showing all for debugging:'
+          )
           for (const ext of allExtensions) {
             addLog('debug', `Extension: ${ext.id}`, {
               isBuiltin: ext.isBuiltin,
@@ -94,67 +109,59 @@ export const DebugTab = ({ vscode }: DebugTabProps) => {
 
   const getLevelIcon = (level: LogEntry['level']) => {
     switch (level) {
-      case 'info': return 'ℹ'
-      case 'debug': return '🔍'
-      case 'warn': return '⚠'
-      case 'error': return '❌'
-      default: return '•'
+      case 'info':
+        return 'ℹ'
+      case 'debug':
+        return '🔍'
+      case 'warn':
+        return '⚠'
+      case 'error':
+        return '❌'
+      default:
+        return '•'
     }
   }
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div className="content-header">
-        <h1 className="content-title">Debug Terminal</h1>
+      <div className='content-header'>
+        <h1 className='content-title'>Debug Terminal</h1>
         <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
           <button
-            className="open-button"
+            className='open-button'
             onClick={loadExtensionInfo}
             disabled={isLoading}
-            type="button"
+            type='button'
           >
             {isLoading ? 'Loading...' : 'Load Extension Info'}
           </button>
-          <button
-            className="add-button"
-            onClick={clearLogs}
-            type="button"
-          >
+          <button className='add-button' onClick={clearLogs} type='button'>
             Clear Terminal
           </button>
         </div>
       </div>
 
-      <div
-        ref={terminalRef}
-        className="debug-terminal"
-      >
+      <div ref={terminalRef} className='debug-terminal'>
         {logs.length === 0 ? (
-          <div className="debug-terminal-placeholder">
+          <div className='debug-terminal-placeholder'>
             Terminal ready. Click "Load Extension Info" to start debugging.
           </div>
         ) : (
           logs.map((log) => (
-            <div key={log.id} className="log-entry">
-              <div className="log-header">
-                <span className="log-timestamp">
-                  {log.timestamp}
-                </span>
+            <div key={log.id} className='log-entry'>
+              <div className='log-header'>
+                <span className='log-timestamp'>{log.timestamp}</span>
                 <span className={`log-icon log-level-${log.level}`}>
                   {getLevelIcon(log.level)}
                 </span>
                 <span className={`log-label log-level-${log.level}`}>
                   {log.level}
                 </span>
-                <span className="log-message">
-                  {log.message}
-                </span>
+                <span className='log-message'>{log.message}</span>
               </div>
               {Boolean(log.data) && (
-                <div className="log-data">
-                  <pre>
-                    {String(formatLogData(log.data))}
-                  </pre>
+                <div className='log-data'>
+                  <pre>{String(formatLogData(log.data))}</pre>
                 </div>
               )}
             </div>

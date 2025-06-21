@@ -1,16 +1,16 @@
 import * as vscode from 'vscode'
-import { RuleEditorProvider } from './editor/RuleEditorProvider'
-import { RulesTreeProvider } from './explorer/RulesTreeProvider'
-import { CursorFileSystemProvider } from './explorer/CursorFileSystemProvider'
-import { registryManager } from './common/registryManager'
-import { fileDecorationProvider } from './common/fileDecorationProvider'
 import { configManager } from './common/configManager'
+import { fileDecorationProvider } from './common/fileDecorationProvider'
+import { logger } from './common/logger'
+import { registryManager } from './common/registryManager'
+import { RuleEditorProvider } from './editor/RuleEditorProvider'
+import { CursorFileSystemProvider } from './explorer/CursorFileSystemProvider'
+import { RulesTreeProvider } from './explorer/RulesTreeProvider'
 import {
   createSettingsWebview,
-  refreshSettingsWebview,
-  getHtmlForWebview
+  getHtmlForWebview,
+  refreshSettingsWebview
 } from './settings/SettingsProvider'
-import { logger } from './common/logger'
 
 async function openTestRuleIfNeeded(
   context: vscode.ExtensionContext

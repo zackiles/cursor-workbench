@@ -3,6 +3,6 @@
   Import all necessary CSS files here to ensure they are bundled by esbuild.
 */
 
-@import '../rule-editor/RuleEditor.css';
-@import '../settings/Settings.css';
-@import '../settings/DocsTab.css';
+@import "../rule-editor/RuleEditor.css";
+@import "../settings/Settings.css";
+@import "../settings/DocsTab.css";

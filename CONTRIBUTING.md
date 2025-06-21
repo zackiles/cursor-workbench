@@ -8,22 +8,28 @@ This guide provides information for developers and contributors interested in wo
 cursor-workbench/
 ├── src/
 │   ├── common/
-│   │   ├── types.ts              # AttachmentType enum and interfaces
-│   │   ├── registryManager.ts    # Git repository management
+│   │   ├── configManager.ts      # Extension configuration
 │   │   ├── fileDecorationProvider.ts # File status indicators
-│   │   └── configManager.ts      # Extension configuration
+│   │   ├── logger.ts             # Logging utility
+│   │   ├── registryManager.ts    # Git repository management
+│   │   ├── types.ts              # AttachmentType enum and interfaces
+│   │   └── utils.ts              # General utility functions
 │   ├── editor/
 │   │   ├── RuleDocument.ts       # Rule parsing and frontmatter handling
 │   │   └── RuleEditorProvider.ts # Main editor implementation
 │   ├── explorer/
-│   │   ├── RulesTreeProvider.ts  # File tree view
-│   │   └── CursorFileSystemProvider.ts # Virtual file system
+│   │   ├── CursorFileSystemProvider.ts # Virtual file system
+│   │   └── RulesTreeProvider.ts  # File tree view
 │   ├── settings/
 │   │   └── SettingsProvider.ts   # Settings webview
-│   └── webviews/
-│       ├── rule-editor/          # React rule editor components
-│       ├── settings/             # Settings React components
-│       └── styles/               # CSS styling
+│   ├── webviews/
+│   │   ├── components/           # Reusable React components
+│   │   ├── hooks/                # React hooks
+│   │   ├── main.tsx              # Main entry point for webview
+│   │   ├── rule-editor/          # React rule editor components
+│   │   ├── settings/             # Settings React components
+│   │   └── styles/               # CSS styling
+│   └── extension.ts              # Main extension entry point
 ├── rule-icon.svg                 # Extension icon
 └── test.rule                     # Example rule file
 ```
@@ -58,26 +64,7 @@ npm run test
 
 ### Publishing
 
-This extension is automatically published to the Open VSX Registry when new version tags are created:
-
-1. **Automatic Publishing** (Recommended)
-   - Create a new git tag: `git tag v1.0.0 && git push origin v1.0.0`
-   - GitHub Actions will automatically build and publish to Open VSX Registry
-
-2. **Manual Publishing** (For testing)
-   ```bash
-   # Install Open VSX CLI
-   npm install -g ovsx
-
-   # Build and publish to Open VSX (requires OPEN_VSX_TOKEN environment variable)
-   npm run build
-   npm run release:ovsx
-   ```
-
-3. **Publishing Workflow**
-   - `Test` workflow runs on pull requests and pushes
-   - `Release` workflow runs on version tags, creates GitHub releases
-   - `Publish to Open VSX Registry` workflow runs after successful releases
+For detailed instructions on publishing the extension to the Open VSX Registry, including automatic and manual release processes, please refer to the [Publishing Guide](PUBLISHING.md).
 
 ## 📋 Requirements
 

@@ -28,9 +28,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "ignore": [
-      "tests/**"
-    ]
+    "ignore": ["tests/**"]
   },
   "linter": {
     "rules": {

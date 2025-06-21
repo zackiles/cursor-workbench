@@ -1,5 +1,5 @@
-import type * as vscode from 'vscode'
 import * as path from 'node:path'
+import type * as vscode from 'vscode'
 import { logger } from '../common/logger'
 import type { AttachmentType } from '../common/types'
 import { determineAttachmentType } from '../common/types'

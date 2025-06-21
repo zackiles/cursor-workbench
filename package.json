@@ -8,16 +8,8 @@
   "engines": {
     "vscode": "^1.85.0"
   },
-  "categories": [
-    "AI",
-    "Debuggers",
-    "Linters",
-    "Machine Learning",
-    "Other"
-  ],
-  "activationEvents": [
-    "onStartupFinished"
-  ],
+  "categories": ["AI", "Debuggers", "Linters", "Machine Learning", "Other"],
+  "activationEvents": ["onStartupFinished"],
   "main": "./bin/extension.js",
   "enabledApiProposals": [
     "cursor",

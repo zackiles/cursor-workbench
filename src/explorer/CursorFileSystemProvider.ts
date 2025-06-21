@@ -1,8 +1,8 @@
-import * as vscode from 'vscode'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
+import * as vscode from 'vscode'
 import { logger } from '../common/logger'
-import { registryManager, type TeamRegistry } from '../common/registryManager'
+import { type TeamRegistry, registryManager } from '../common/registryManager'
 
 export class CursorFileSystemProvider implements vscode.FileSystemProvider {
   private _emitter = new vscode.EventEmitter<vscode.FileChangeEvent[]>()

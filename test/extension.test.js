@@ -1,30 +1,30 @@
-const assert = require('node:assert')
-const vscode = require('vscode')
+import { ok } from 'node:assert'
+import { extensions, window } from 'vscode'
 
 // Simple test suite for the custom file editor extension
 suite('Custom File Editor Extension Test Suite', () => {
-  vscode.window.showInformationMessage('Start all tests.')
+  window.showInformationMessage('Start all tests.')
 
   test('Extension should be present', () => {
-    const extension = vscode.extensions.getExtension(
+    const extension = extensions.getExtension(
       'cursor-workbench.cursor-workbench'
     )
-    assert.ok(extension, 'Extension should be found')
+    ok(extension, 'Extension should be found')
   })
 
   test('Extension should activate', async () => {
-    const extension = vscode.extensions.getExtension(
+    const extension = extensions.getExtension(
       'cursor-workbench.cursor-workbench'
     )
     await extension.activate()
-    assert.ok(extension.isActive, 'Extension should be active')
+    ok(extension.isActive, 'Extension should be active')
   })
 
   test('Custom editor should be registered', () => {
     // This test verifies that our custom editor provider is registered
     // In a real scenario, you would test opening a .rule file and verifying
     // that the custom editor is used
-    assert.ok(true, 'Custom editor registration test placeholder')
+    ok(true, 'Custom editor registration test placeholder')
   })
 })
 
@@ -43,7 +43,7 @@ This is sample content.`
 
     // In a real test, you would import and test the CustomFileDocument class
     // For now, this is a placeholder to show the testing structure
-    assert.ok(true, 'Front matter parsing test placeholder')
+    ok(true, 'Front matter parsing test placeholder')
   })
 
   test('Should handle content without front matter', () => {
@@ -52,6 +52,6 @@ This is sample content.`
 This file has no front matter.`
 
     // Test that files without front matter are handled gracefully
-    assert.ok(true, 'No front matter handling test placeholder')
+    ok(true, 'No front matter handling test placeholder')
   })
 })

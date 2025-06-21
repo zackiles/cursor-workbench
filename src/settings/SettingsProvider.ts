@@ -1,8 +1,8 @@
-import { logger } from '../common/logger'
-import { getNonce } from '../common/utils'
-import { registryManager } from '../common/registryManager'
-import { configManager } from '../common/configManager'
 import * as vscode from 'vscode'
+import { configManager } from '../common/configManager'
+import { logger } from '../common/logger'
+import { registryManager } from '../common/registryManager'
+import { getNonce } from '../common/utils'
 
 function convertGithubUrlToGit(url: string): string {
   const githubHttpsRegex = /^https:\/\/github\.com\/([^\/]+)\/([^\/]+)(\.git)?$/

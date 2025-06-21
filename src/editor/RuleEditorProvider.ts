@@ -1,17 +1,17 @@
-import * as vscode from 'vscode'
-import * as path from 'node:path'
 import * as fs from 'node:fs'
-import { RuleDocument } from './RuleDocument'
-import { logger } from '../common/logger'
-import { getNonce } from '../common/utils'
-import { createSettingsWebview } from '../settings/SettingsProvider'
+import * as path from 'node:path'
+import * as vscode from 'vscode'
 import { configManager } from '../common/configManager'
+import { logger } from '../common/logger'
 import { registryManager } from '../common/registryManager'
 import type {
-  DocumentData,
+  AttachmentType,
   DetailedFileStatus,
-  AttachmentType
+  DocumentData
 } from '../common/types'
+import { getNonce } from '../common/utils'
+import { createSettingsWebview } from '../settings/SettingsProvider'
+import { RuleDocument } from './RuleDocument'
 
 const EDITOR_VIEW_TYPE = 'customFileEditor'
 const EDITOR_DISPLAY_NAME = 'Rule Editor'

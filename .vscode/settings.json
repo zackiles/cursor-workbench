@@ -19,9 +19,7 @@
   "search.exclude": {
     "**/.cursor": true
   },
-  "cSpell.dictionaries": [
-    "!typescript"
-  ],
+  "cSpell.dictionaries": ["!typescript"],
   "cSpell.words": [
     ".cursorignore",
     "asynciterable",

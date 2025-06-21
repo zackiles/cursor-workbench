@@ -1,11 +1,11 @@
-import * as vscode from 'vscode'
-import * as fs from 'node:fs'
-import * as path from 'node:path'
-import * as os from 'node:os'
-import * as crypto from 'node:crypto'
 import { spawn } from 'node:child_process'
-import { logger } from './logger'
+import * as crypto from 'node:crypto'
+import * as fs from 'node:fs'
+import * as os from 'node:os'
+import * as path from 'node:path'
+import * as vscode from 'vscode'
 import { configManager } from './configManager'
+import { logger } from './logger'
 
 export interface TeamRegistry {
   url: string
@@ -892,13 +892,13 @@ class RegistryManager {
   }
 
   private async getDefaultBranch(repoPath: string): Promise<string> {
-    const branch = await this.executeGitCommandDirect("git", [
-      "-C",
+    const branch = await this.executeGitCommandDirect('git', [
+      '-C',
       repoPath,
-      "symbolic-ref",
-      "refs/remotes/origin/HEAD",
-    ]);
-    return branch.trim().split("/").pop() || "main";
+      'symbolic-ref',
+      'refs/remotes/origin/HEAD'
+    ])
+    return branch.trim().split('/').pop() || 'main'
   }
 
   private async removeDirectory(dirPath: string): Promise<void> {

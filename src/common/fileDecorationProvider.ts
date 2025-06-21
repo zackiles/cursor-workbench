@@ -1,8 +1,8 @@
-import * as vscode from 'vscode'
-import * as path from 'node:path'
 import * as fs from 'node:fs'
-import { registryManager } from './registryManager'
+import * as path from 'node:path'
+import * as vscode from 'vscode'
 import { configManager } from './configManager'
+import { registryManager } from './registryManager'
 
 export class FileDecorationProvider implements vscode.FileDecorationProvider {
   private _onDidChangeFileDecorations = new vscode.EventEmitter<

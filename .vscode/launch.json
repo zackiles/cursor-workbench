@@ -12,21 +12,15 @@
         "--disable-extensions",
         "--extensionDevelopmentPath=${workspaceFolder}"
       ],
-      "outFiles": [
-        "${workspaceFolder}/bin/**/*.js"
-      ],
+      "outFiles": ["${workspaceFolder}/bin/**/*.js"],
       "preLaunchTask": "npm: build"
     },
     {
       "name": "Extension (With Other Extensions)",
       "type": "extensionHost",
       "request": "launch",
-      "args": [
-        "--extensionDevelopmentPath=${workspaceFolder}"
-      ],
-      "outFiles": [
-        "${workspaceFolder}/bin/**/*.js"
-      ],
+      "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
+      "outFiles": ["${workspaceFolder}/bin/**/*.js"],
       "preLaunchTask": "npm: build"
     }
   ]
