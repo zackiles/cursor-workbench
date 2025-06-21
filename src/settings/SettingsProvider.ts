@@ -36,30 +36,37 @@ export function refreshSettingsWebview(context: vscode.ExtensionContext): void {
   createSettingsWebview(context)
 }
 
-export function createSettingsWebview(context: vscode.ExtensionContext): void {
+export function createSettingsWebview(
+  context: vscode.ExtensionContext,
+  revivedPanel?: vscode.WebviewPanel
+): void {
   const column = vscode.window.activeTextEditor
     ? vscode.window.activeTextEditor.viewColumn
     : undefined
 
-  // If we already have a panel, show it
+  // If we already have a panel, show it and dispose of the revived one if it exists
   if (currentPanel) {
     currentPanel.reveal(column)
-    // Always refresh the HTML content to ensure latest CSS
     currentPanel.webview.html = getHtmlForWebview(currentPanel.webview, context)
+    if (revivedPanel) {
+      revivedPanel.dispose()
+    }
     return
   }
 
-  // Otherwise, create a new panel
-  const panel = vscode.window.createWebviewPanel(
-    'cursorWorkbenchSettings',
-    'Cursor Workbench Settings',
-    column || vscode.ViewColumn.One,
-    {
-      enableScripts: true,
-      localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'bin')],
-      retainContextWhenHidden: false // Set to false to ensure panel is fully recreated
-    }
-  )
+  // Otherwise, create a new panel or use the revived one
+  const panel =
+    revivedPanel ||
+    vscode.window.createWebviewPanel(
+      'cursorWorkbenchSettings',
+      'Cursor Workbench Settings',
+      column || vscode.ViewColumn.One,
+      {
+        enableScripts: true,
+        localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'bin')],
+        retainContextWhenHidden: false // Set to false to ensure panel is fully recreated
+      }
+    )
 
   currentPanel = panel
 
@@ -179,6 +186,9 @@ export function createSettingsWebview(context: vscode.ExtensionContext): void {
                   fileCount
                 }
               })
+
+              // Refresh the rules tree to show new registry structure
+              vscode.commands.executeCommand('rulesExplorer.refresh')
             } else {
               logger.log(`${displayName} registry addition cancelled by user`)
             }
@@ -223,6 +233,9 @@ export function createSettingsWebview(context: vscode.ExtensionContext): void {
                 registryType
               }
             })
+
+            // Refresh the rules tree to show updated structure
+            vscode.commands.executeCommand('rulesExplorer.refresh')
           } catch (error) {
             logger.log('Error removing registry:', {
               message: error instanceof Error ? error.message : String(error),

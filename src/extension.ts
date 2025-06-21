@@ -263,15 +263,8 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.window.registerWebviewPanelSerializer('cursorWorkbenchSettings', {
       async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel) {
-        webviewPanel.webview.options = {
-          enableScripts: true,
-          localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'bin')]
-        }
-
-        webviewPanel.webview.html = getHtmlForWebview(
-          webviewPanel.webview,
-          context
-        )
+        // Re-initialize the webview content and hooks
+        createSettingsWebview(context, webviewPanel)
       }
     })
   )
