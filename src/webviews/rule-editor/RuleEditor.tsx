@@ -514,7 +514,7 @@ export const RuleEditor = ({ vscode }: RuleEditorProps) => {
           >
             <path d='M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z' />
           </svg>
-          <span>Notes</span>
+          <span>Usage Notes</span>
         </button>
 
         {isNotesExpanded && (
@@ -523,7 +523,7 @@ export const RuleEditor = ({ vscode }: RuleEditorProps) => {
               id='notes-textarea'
               value={frontmatter.notes}
               onChange={(e) => handleFrontmatterChange('notes', e.target.value)}
-              placeholder='Add notes or additional context for this rule...'
+              placeholder='Add usage notes or additional context for this rule...'
               className='notes-textarea'
               rows={3}
             />
