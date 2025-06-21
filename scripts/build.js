@@ -8,12 +8,52 @@ const isDev = process.argv.includes('--dev')
 const isWatch = process.argv.includes('--watch')
 const isProduction = process.argv.includes('--production')
 
+// Environment variables for development
+const PROJECT_SOURCE_DIR = process.env.PROJECT_SOURCE_DIR
+const PROJECT_TARGET_DIR = process.env.PROJECT_TARGET_DIR
+
 // Build timestamp
 const buildTime = new Date().toISOString()
 
 console.log(
   `🔨 Building ${isDev || isWatch ? 'development' : 'production'} build...`
 )
+
+if (PROJECT_TARGET_DIR) {
+  console.log(`📋 Target directory: ${PROJECT_TARGET_DIR}`)
+}
+
+// Copy build artifacts to target directory if specified
+function copyBuildToTarget() {
+  if (!PROJECT_TARGET_DIR) return
+
+  try {
+    const targetBinDir = path.join(PROJECT_TARGET_DIR, 'bin')
+
+    // Ensure target bin directory exists
+    if (!fs.existsSync(targetBinDir)) {
+      fs.mkdirSync(targetBinDir, { recursive: true })
+    }
+
+    // Copy build artifacts
+    if (fs.existsSync('bin/extension.js')) {
+      fs.copyFileSync(
+        'bin/extension.js',
+        path.join(targetBinDir, 'extension.js')
+      )
+    }
+    if (fs.existsSync('bin/webview.js')) {
+      fs.copyFileSync('bin/webview.js', path.join(targetBinDir, 'webview.js'))
+    }
+    if (fs.existsSync('bin/webview.css')) {
+      fs.copyFileSync('bin/webview.css', path.join(targetBinDir, 'webview.css'))
+    }
+
+    console.log('📋 Build artifacts copied to target directory')
+  } catch (error) {
+    console.error('❌ Failed to copy build artifacts:', error.message)
+  }
+}
 
 async function build() {
   // Clean bin directory
@@ -38,12 +78,25 @@ async function build() {
     logLevel: 'info'
   }
 
+  // Add plugins for copying to target directory if specified
+  const copyPlugin = PROJECT_TARGET_DIR
+    ? {
+        name: 'copy-to-target',
+        setup(build) {
+          build.onEnd(() => {
+            copyBuildToTarget()
+          })
+        }
+      }
+    : null
+
   // Extension build
   const extensionCtx = await esbuild.context({
     ...commonOptions,
     entryPoints: ['src/extension.ts'],
     outfile: 'bin/extension.js',
-    format: 'cjs'
+    format: 'cjs',
+    plugins: copyPlugin ? [copyPlugin] : []
   })
 
   // Webview build
@@ -56,7 +109,8 @@ async function build() {
     format: 'iife',
     jsx: 'automatic',
     jsxImportSource: 'react',
-    external: [] // No externals for webview
+    external: [], // No externals for webview
+    plugins: copyPlugin ? [copyPlugin] : []
   })
 
   // CSS build
@@ -65,16 +119,21 @@ async function build() {
     outfile: 'bin/webview.css',
     bundle: true,
     minify: isProduction && !isDev && !isWatch,
-    loader: { '.css': 'css' }
+    loader: { '.css': 'css' },
+    plugins: copyPlugin ? [copyPlugin] : []
   })
 
   if (isWatch) {
     console.log('👀 Watching for changes...')
+
     await Promise.all([
       extensionCtx.watch(),
       webviewCtx.watch(),
       cssCtx.watch()
     ])
+
+    // Copy initial build to target
+    copyBuildToTarget()
 
     process.stdin.resume()
   } else {
@@ -84,6 +143,9 @@ async function build() {
       webviewCtx.rebuild(),
       cssCtx.rebuild()
     ])
+
+    // Copy to target directory after build
+    copyBuildToTarget()
 
     await Promise.all([
       extensionCtx.dispose(),
