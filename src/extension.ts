@@ -15,9 +15,10 @@ import {
 async function openTestRuleIfNeeded(
   context: vscode.ExtensionContext
 ): Promise<void> {
+  const testRulePath = '.cursor/rules/test.mdc'
   const testRuleUri = vscode.Uri.joinPath(
     vscode.workspace.workspaceFolders?.[0]?.uri || context.extensionUri,
-    'test.rule'
+    testRulePath
   )
 
   let isTestRuleOpen = false
@@ -37,19 +38,19 @@ async function openTestRuleIfNeeded(
       )
     }
   } catch (error) {
-    logger.log('Error checking if test.rule is open:', error)
+    logger.log(`Error checking if ${testRulePath} is open:`, error)
     isTestRuleOpen = false
   }
 
   if (!isTestRuleOpen) {
     try {
       await vscode.commands.executeCommand('vscode.open', testRuleUri)
-      logger.log('Opened test.rule file')
+      logger.log(`Opened ${testRulePath} file`)
     } catch (error) {
-      logger.log('Error opening test.rule file:', error)
+      logger.log(`Error opening ${testRulePath} file:`, error)
     }
   } else {
-    logger.log('test.rule file is already open')
+    logger.log(`${testRulePath} file is already open`)
   }
 }
 
@@ -116,7 +117,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(watcher)
 
-    logger.log('Development mode: auto-opening settings webview and test.rule')
+    logger.log(
+      'Development mode: auto-opening settings webview and .cursor/rules/test.mdc'
+    )
 
     createSettingsWebview(context)
     void openTestRuleIfNeeded(context)
