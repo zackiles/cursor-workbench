@@ -66,22 +66,22 @@
     "commands": [
       {
         "command": "rulesExplorer.refresh",
-        "title": "Refresh",
+        "title": "Cursor Workbench: Refresh Rules Explorer",
         "icon": "$(refresh)"
       },
       {
         "command": "rulesExplorer.settings",
-        "title": "Settings",
+        "title": "Cursor Workbench: Open Settings",
         "icon": "$(gear)"
       },
       {
         "command": "rulesExplorer.syncFile",
-        "title": "Sync File",
+        "title": "Cursor Workbench: Sync Rule File",
         "icon": "$(sync)"
       },
       {
         "command": "rulesExplorer.refreshSettings",
-        "title": "Refresh Settings View",
+        "title": "Cursor Workbench: Refresh Settings View",
         "icon": "$(refresh)"
       }
     ],
