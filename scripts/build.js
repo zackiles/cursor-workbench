@@ -17,7 +17,7 @@ console.log(
 
 async function build() {
   // Clean bin directory
-  if (fs.existsSync('bin')) {
+  if (!isWatch && fs.existsSync('bin')) {
     fs.rmSync('bin', { recursive: true, force: true })
   }
   fs.mkdirSync('bin', { recursive: true })
