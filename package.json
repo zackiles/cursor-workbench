@@ -57,29 +57,29 @@
     },
     "commands": [
       {
-        "command": "rulesExplorer.refresh",
+        "command": "cursorWorkbench.rules.refresh",
         "title": "Cursor Workbench: Refresh Rules Explorer",
         "icon": "$(refresh)"
       },
       {
-        "command": "rulesExplorer.settings",
+        "command": "cursorWorkbench.rules.settings",
         "title": "Cursor Workbench: Open Settings",
         "icon": "$(gear)"
       },
       {
-        "command": "rulesExplorer.syncFile",
+        "command": "cursorWorkbench.rules.syncFile",
         "title": "Cursor Workbench: Sync Rule File",
         "icon": "$(sync)"
       },
       {
-        "command": "rulesExplorer.refreshSettings",
+        "command": "cursorWorkbench.rules.refreshSettings",
         "title": "Cursor Workbench: Refresh Settings View",
         "icon": "$(refresh)"
       }
     ],
     "keybindings": [
       {
-        "command": "rulesExplorer.refreshSettings",
+        "command": "cursorWorkbench.rules.refreshSettings",
         "key": "ctrl+shift+r",
         "mac": "cmd+shift+r",
         "when": "activeWebviewPanelId == 'cursorWorkbenchSettings'"
@@ -88,24 +88,24 @@
     "menus": {
       "view/title": [
         {
-          "command": "rulesExplorer.refresh",
+          "command": "cursorWorkbench.rules.refresh",
           "when": "view == rulesExplorer",
           "group": "navigation@1"
         },
         {
-          "command": "rulesExplorer.settings",
+          "command": "cursorWorkbench.rules.settings",
           "when": "view == rulesExplorer",
           "group": "navigation@2"
         }
       ],
       "view/item/context": [
         {
-          "command": "rulesExplorer.syncFile",
+          "command": "cursorWorkbench.rules.syncFile",
           "when": "view == rulesExplorer && viewItem == ruleFile",
           "group": "inline"
         },
         {
-          "command": "rulesExplorer.syncFile",
+          "command": "cursorWorkbench.rules.syncFile",
           "when": "view == rulesExplorer && viewItem == virtualRuleFile",
           "group": "inline"
         }

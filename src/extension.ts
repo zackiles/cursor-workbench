@@ -95,6 +95,13 @@ export async function activate(context: vscode.ExtensionContext) {
   logger.log(`Environment: ${env}`)
   logger.log(`Last built: ${buildDate}`)
 
+  // TODO: Implement our own rule creation override with the custom rule editor
+  /**
+  vscode.commands.registerCommand('workbench.action.newCursorRule', () => {
+    logger.log('TRIGGERED: New Cursor Rule')
+  })
+  /** */
+
   await configManager.initialize(context)
   await registryManager.initialize(context)
 
@@ -202,7 +209,7 @@ export async function activate(context: vscode.ExtensionContext) {
   rulesProvider.refresh()
 
   const refreshCommand = vscode.commands.registerCommand(
-    'rulesExplorer.refresh',
+    'cursorWorkbench.rules.refresh',
     () => {
       logger.log('Refreshing rules explorer')
       rulesProvider.refresh()
@@ -210,7 +217,7 @@ export async function activate(context: vscode.ExtensionContext) {
   )
 
   const settingsCommand = vscode.commands.registerCommand(
-    'rulesExplorer.settings',
+    'cursorWorkbench.rules.settings',
     async () => {
       logger.log('Opening settings')
       createSettingsWebview(context)
@@ -218,7 +225,7 @@ export async function activate(context: vscode.ExtensionContext) {
   )
 
   const syncFileCommand = vscode.commands.registerCommand(
-    'rulesExplorer.syncFile',
+    'cursorWorkbench.rules.syncFile',
     async (item) => {
       logger.log('Syncing file')
       await rulesProvider.syncFile(item)
@@ -226,7 +233,7 @@ export async function activate(context: vscode.ExtensionContext) {
   )
 
   const refreshSettingsCommand = vscode.commands.registerCommand(
-    'rulesExplorer.refreshSettings',
+    'cursorWorkbench.rules.refreshSettings',
     () => {
       logger.log('Manually refreshing settings webview')
       refreshSettingsWebview(context)
