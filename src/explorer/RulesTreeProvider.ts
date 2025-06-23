@@ -32,13 +32,16 @@ export class RulesTreeItem extends vscode.TreeItem {
 
     if (itemType === 'localRoot') {
       this.contextValue = 'localRoot'
-      this.iconPath = new vscode.ThemeIcon('folder')
+      this.iconPath = new vscode.ThemeIcon('device-desktop')
       return
     }
 
     if (itemType === 'teamRoot') {
       this.contextValue = 'teamRoot'
-      this.iconPath = new vscode.ThemeIcon('organization')
+      this.iconPath = new vscode.ThemeIcon(
+        'organization',
+        new vscode.ThemeColor('testing.iconPassed')
+      )
       return
     }
 
@@ -51,13 +54,13 @@ export class RulesTreeItem extends vscode.TreeItem {
 
       if (registryType === 'team') {
         this.contextValue = 'virtualRuleFile'
-        this.iconPath = new vscode.ThemeIcon('organization')
+        this.iconPath = new vscode.ThemeIcon('pencil')
       } else if (registryType === 'user') {
         this.contextValue = 'virtualRuleFile'
-        this.iconPath = new vscode.ThemeIcon('person')
+        this.iconPath = new vscode.ThemeIcon('pencil')
       } else {
         this.contextValue = 'ruleFile'
-        this.iconPath = new vscode.ThemeIcon('file')
+        this.iconPath = new vscode.ThemeIcon('pencil')
       }
     } else if (!isFile) {
       this.contextValue = 'ruleFolder'
@@ -135,7 +138,7 @@ export class RulesTreeProvider
     if (teamRegistry && teamRegistry.files.length > 0) {
       items.push(
         new RulesTreeItem(
-          'Team Rules',
+          '𝗧𝗲𝗮𝗺 𝗥𝘂𝗹𝗲𝘀',
           vscode.TreeItemCollapsibleState.Expanded,
           undefined,
           false,
@@ -261,12 +264,18 @@ export class RulesTreeProvider
 
     for (const virtualFile of teamRegistry.files) {
       const normalizedPath = virtualFile.replace(/\\/g, '/')
-      const segments = normalizedPath.split('/')
+      let relativePath = normalizedPath
+
+      if (normalizedPath.startsWith('.cursor/rules/')) {
+        relativePath = normalizedPath.substring('.cursor/rules/'.length)
+      }
+
+      const segments = relativePath.split('/')
 
       if (segments.length > 1) {
         folders.add(segments[0])
       } else {
-        files.push(virtualFile)
+        files.push(relativePath)
       }
     }
 
@@ -399,8 +408,16 @@ export class RulesTreeProvider
     for (const virtualFile of teamRegistry.files) {
       const normalizedPath = virtualFile.replace(/\\/g, '/')
 
-      if (normalizedPath.startsWith(`${relativePath}/`)) {
-        const remainingPath = normalizedPath.substring(relativePath.length + 1)
+      // Strip .cursor/rules/ prefix to get relative path
+      let fileRelativePath = normalizedPath
+      if (normalizedPath.startsWith('.cursor/rules/')) {
+        fileRelativePath = normalizedPath.substring('.cursor/rules/'.length)
+      }
+
+      if (fileRelativePath.startsWith(`${relativePath}/`)) {
+        const remainingPath = fileRelativePath.substring(
+          relativePath.length + 1
+        )
         const segments = remainingPath.split('/')
 
         if (segments.length > 1) {

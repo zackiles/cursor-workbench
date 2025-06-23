@@ -22,6 +22,7 @@ export const RuleEditor = ({ vscode }: RuleEditorProps) => {
   })
   const [filePath, setFilePath] = useState('')
   const [workspaceRoot, setWorkspaceRoot] = useState('')
+  const [ruleScope, setRuleScope] = useState('local')
   const [isLoading, setIsLoading] = useState(true)
   const [isNotesExpanded, setIsNotesExpanded] = useState(false)
   const [localStatus, setLocalStatus] = useState<'green' | 'yellow' | 'red'>(
@@ -38,7 +39,6 @@ export const RuleEditor = ({ vscode }: RuleEditorProps) => {
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const localStatusTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Create a stable logging function
   const logMessage = useCallback(
     (message: string, data?: unknown) => {
       vscode.postMessage({ type: 'log', message, data })
@@ -46,7 +46,6 @@ export const RuleEditor = ({ vscode }: RuleEditorProps) => {
     [vscode]
   )
 
-  // Log component mount only once
   useEffect(() => {
     logMessage('RuleEditor component mounted')
   }, [logMessage])
@@ -105,60 +104,6 @@ export const RuleEditor = ({ vscode }: RuleEditorProps) => {
         setLocalStatus('yellow')
       }
     }, 500)
-  }, [])
-
-  // Determine rule kind based on file path
-  const getRuleKind = useCallback(
-    (path: string): string => {
-      if (!path || !workspaceRoot) return 'local'
-
-      const relativePath = path.startsWith(workspaceRoot)
-        ? path.slice(workspaceRoot.length).replace(/^[/\\]/, '')
-        : path
-
-      // Normalize path separators to forward slashes
-      const normalizedPath = relativePath.replace(/\\/g, '/')
-
-      // Check for team rules
-      if (
-        normalizedPath.startsWith('.cursor/rules/team/') ||
-        normalizedPath.startsWith('.cursor/rules/global/') ||
-        normalizedPath === '.cursor/rules/team' ||
-        normalizedPath === '.cursor/rules/global'
-      ) {
-        return 'team'
-      }
-
-      // Check for user rules
-      if (
-        normalizedPath.startsWith('.cursor/rules/user/') ||
-        normalizedPath.startsWith('.cursor/rules/local/') ||
-        normalizedPath === '.cursor/rules/user' ||
-        normalizedPath === '.cursor/rules/local'
-      ) {
-        return 'user'
-      }
-
-      // Check for project rules (in .cursor/rules but not in excluded folders)
-      if (
-        normalizedPath.startsWith('.cursor/rules/') ||
-        normalizedPath === '.cursor/rules'
-      ) {
-        return 'project'
-      }
-
-      // Default fallback
-      return 'local'
-    },
-    [workspaceRoot]
-  )
-
-  // Get filename without extension
-  const getFileNameWithoutExtension = useCallback((path: string): string => {
-    if (!path) return ''
-    const fileName = path.split(/[/\\]/).pop() || ''
-    const lastDotIndex = fileName.lastIndexOf('.')
-    return lastDotIndex > 0 ? fileName.slice(0, lastDotIndex) : fileName
   }, [])
 
   // Determine file format based on extension
@@ -313,8 +258,15 @@ export const RuleEditor = ({ vscode }: RuleEditorProps) => {
     })
   }, [vscode, remoteStatus, filePath])
 
-  const ruleKind = getRuleKind(filePath)
-  const fileName = getFileNameWithoutExtension(filePath)
+  // Get filename without extension
+  const getFileNameWithoutExtension = useCallback((path: string): string => {
+    if (!path) return ''
+    const fileName = path.split(/[/\\]/).pop() || ''
+    const lastDotIndex = fileName.lastIndexOf('.')
+    return lastDotIndex > 0 ? fileName.slice(0, lastDotIndex) : fileName
+  }, [])
+
+  // Determine file format based on extension
   const fileFormat = getFileFormat(filePath)
 
   // Listen for messages from VS Code
@@ -329,6 +281,7 @@ export const RuleEditor = ({ vscode }: RuleEditorProps) => {
 
         setFilePath(data.filePath || '')
         setWorkspaceRoot(data.workspaceRoot || '')
+        setRuleScope(data.scope || 'local')
         receiveDataFromBackend(data)
         setLocalStatus(data.localStatus || 'green')
         setRemoteStatus(data.remoteStatus || 'green')
@@ -384,11 +337,11 @@ export const RuleEditor = ({ vscode }: RuleEditorProps) => {
           </button>
           <div className='rule-details'>
             <div className='rule-info-line'>
-              <strong>Rule: {fileName}</strong>
+              <strong>Rule: {getFileNameWithoutExtension(filePath)}</strong>
             </div>
             <div className='scope-info-line'>
               <code className='scope-info'>
-                <strong>Scope:</strong> {ruleKind}{' '}
+                <strong>Scope:</strong> {ruleScope}{' '}
               </code>
               <code className='kind-info'>
                 <strong>Kind:</strong> Cursor{' '}

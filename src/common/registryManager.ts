@@ -256,36 +256,41 @@ class RegistryManager {
     try {
       logger.log('Adding team registry', { gitUrl })
 
-      // Remove existing registry if any
       await this.removeTeamRegistry()
 
-      // Create storage location
       const storageUri = this.context.storageUri
       if (!storageUri) {
-        throw new Error('Extension storage not available')
+        const hasWorkspaceFolder =
+          vscode.workspace.workspaceFolders &&
+          vscode.workspace.workspaceFolders.length > 0
+
+        if (!hasWorkspaceFolder) {
+          throw new Error(
+            'Team registries require a workspace folder to be open. Please open a folder or workspace in VS Code before adding a team registry.'
+          )
+        } else {
+          throw new Error(
+            'Extension storage is not available for this workspace. Try reopening the workspace or restarting VS Code.'
+          )
+        }
       }
 
       const storageLocation = path.join(storageUri.fsPath, 'team-registry')
       await fs.promises.mkdir(storageLocation, { recursive: true })
 
-      // Clone repository with sparse checkout directly to storage
       await this.cloneRepositoryWithSparseCheckout(gitUrl, storageLocation)
 
-      // Get list of files in the registry
       const cursorPath = path.join(storageLocation, 'repo', '.cursor')
       const files = await this.getRegistryFiles(cursorPath)
 
-      // Create symlinks to project
       await this.createSymlinks(cursorPath, files)
 
-      // Update registry state
       this.teamRegistry = {
         url: gitUrl,
         storageLocation,
         files
       }
 
-      // Persist state to survive VSCode reloads
       await this.persistState()
 
       logger.log('Team registry added successfully', {
@@ -296,7 +301,6 @@ class RegistryManager {
 
       this.notifyRegistryChanged()
 
-      // Add to .gitignore
       await this.addToGitignore()
     } catch (error) {
       logger.log('Error adding team registry', { gitUrl, error })
@@ -1220,6 +1224,26 @@ class RegistryManager {
         gitignorePath,
         error: error instanceof Error ? error.message : String(error)
       })
+    }
+  }
+
+  async isTeamRegistryFile(filePath: string): Promise<boolean> {
+    if (!this.teamRegistry?.storageLocation) {
+      return false
+    }
+
+    try {
+      const stats = await fs.promises.lstat(filePath)
+      if (!stats.isSymbolicLink()) {
+        return false
+      }
+
+      const realPath = await fs.promises.realpath(filePath)
+      const registryStoragePath = this.teamRegistry.storageLocation
+
+      return realPath.startsWith(registryStoragePath)
+    } catch (error) {
+      return false
     }
   }
 }

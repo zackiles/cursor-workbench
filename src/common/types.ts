@@ -29,6 +29,7 @@ export interface DocumentData {
   content: string
   filePath?: string
   workspaceRoot?: string
+  scope?: string
   localStatus?: 'green' | 'yellow' | 'red'
   remoteStatus?: 'green' | 'yellow' | 'red' | 'gray'
   detailedStatus?: DetailedFileStatus

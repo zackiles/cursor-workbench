@@ -117,7 +117,7 @@ export const GeneralTab = ({ vscode }: GeneralTabProps) => {
     // Create description based on registry status
     const getDescription = () => {
       if (hasRegistry && typeof fileCount === 'number') {
-        return `${fileCount} ${fileCount === 1 ? 'file' : 'files'} loaded from registry`
+        return `${fileCount} ${fileCount === 1 ? 'rule' : 'rules'} loaded from registry`
       }
       return description
     }

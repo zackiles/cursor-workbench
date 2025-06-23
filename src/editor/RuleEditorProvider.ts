@@ -16,6 +16,35 @@ import { RuleDocument } from './RuleDocument'
 const EDITOR_VIEW_TYPE = 'customFileEditor'
 const EDITOR_DISPLAY_NAME = 'Rule Editor'
 
+async function getRuleScope(
+  documentUri: vscode.Uri,
+  workspaceRootUri: vscode.Uri
+): Promise<string> {
+  const filePath = documentUri.fsPath
+  const workspaceRoot = workspaceRootUri.fsPath
+
+  if (await registryManager.isTeamRegistryFile(filePath)) {
+    return 'team'
+  }
+
+  const relativePath = path
+    .relative(workspaceRoot, filePath)
+    .replace(/\\/g, '/')
+
+  if (
+    relativePath.startsWith('.cursor/rules/user/') ||
+    relativePath.startsWith('.cursor/rules/local/')
+  ) {
+    return 'user'
+  }
+
+  if (relativePath.startsWith('.cursor/rules/')) {
+    return 'project'
+  }
+
+  return 'local'
+}
+
 export class RuleEditorProvider implements vscode.CustomTextEditorProvider {
   public static register(context: vscode.ExtensionContext): vscode.Disposable {
     const provider = new RuleEditorProvider(context)
@@ -538,10 +567,8 @@ export class RuleEditorProvider implements vscode.CustomTextEditorProvider {
     customDocument: RuleDocument,
     documentUri: vscode.Uri
   ) {
-    // Get workspace root
     const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
 
-    // Read the actual file content (resolving symlinks)
     const actualContent = await this.readFileContent(documentUri)
     const resolvedDocument = new RuleDocument(
       {
@@ -550,17 +577,20 @@ export class RuleEditorProvider implements vscode.CustomTextEditorProvider {
       documentUri.fsPath
     )
 
-    // Get status information using the existing document or open it fresh
     let localStatus: 'green' | 'yellow' | 'red' = 'green'
     let remoteStatus: 'green' | 'yellow' | 'red' | 'gray' = 'green'
     let detailedStatus: DetailedFileStatus | undefined
+    let scope = 'local'
 
     try {
       const document = await vscode.workspace.openTextDocument(documentUri)
       localStatus = this.getLocalStatus(document)
       remoteStatus = await this.getRemoteStatus(document)
 
-      // Get detailed status if this is a registry file
+      if (workspaceRoot) {
+        scope = await getRuleScope(documentUri, vscode.Uri.file(workspaceRoot))
+      }
+
       const teamRegistry = registryManager.getTeamRegistry()
       if (teamRegistry && workspaceRoot) {
         const relativePath = path.relative(workspaceRoot, documentUri.fsPath)
@@ -574,7 +604,6 @@ export class RuleEditorProvider implements vscode.CustomTextEditorProvider {
       }
     } catch (error) {
       logger.log('Error getting document status:', error)
-      // Use defaults on error
     }
 
     const messageData: DocumentData = {
@@ -586,6 +615,7 @@ export class RuleEditorProvider implements vscode.CustomTextEditorProvider {
       content: resolvedDocument.content,
       filePath: documentUri.fsPath,
       workspaceRoot: workspaceRoot || path.dirname(documentUri.fsPath),
+      scope,
       localStatus,
       remoteStatus,
       detailedStatus,

@@ -1,4 +1,3 @@
-import * as path from 'node:path'
 import type * as vscode from 'vscode'
 import { logger } from '../common/logger'
 import type { AttachmentType } from '../common/types'
@@ -61,32 +60,21 @@ export class RuleDocument {
   ): boolean {
     const value = frontmatter.alwaysApply
 
-    // If explicitly set, use that value
     if (typeof value === 'boolean') {
       return value
     }
     if (typeof value === 'string') {
       const lowerValue = value.toLowerCase().trim()
-      return lowerValue === 'true'
+      if (lowerValue === 'true') {
+        return true
+      }
+      if (lowerValue === 'false') {
+        return false
+      }
     }
 
-    // If not set, derive from attachment type
+    // If not set, or not a valid boolean string, derive from attachment type
     return attachmentType === 'always'
-  }
-
-  private extractBooleanField(
-    frontmatter: Record<string, unknown>,
-    field: string
-  ): boolean {
-    const value = frontmatter[field]
-    if (typeof value === 'boolean') {
-      return value
-    }
-    if (typeof value === 'string') {
-      const lowerValue = value.toLowerCase().trim()
-      return lowerValue === 'true'
-    }
-    return false
   }
 
   private parseFileContent(text: string): {
