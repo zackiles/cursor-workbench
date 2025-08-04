@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+bin/
+dist/
+
+# Build output
+*.vsix
+
+# Git
+.git/
+
+# VSCode
+.vscode/
+
+# Logs
+*.log
+
+# Lock files
+package-lock.json
+yarn.lock
+
+# Cursor specific
+.cursor/
+.cursorignore*

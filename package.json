@@ -8,8 +8,16 @@
   "engines": {
     "vscode": "^1.85.0"
   },
-  "categories": ["AI", "Debuggers", "Linters", "Machine Learning", "Other"],
-  "activationEvents": ["onStartupFinished"],
+  "categories": [
+    "AI",
+    "Debuggers",
+    "Linters",
+    "Machine Learning",
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./bin/extension.js",
   "enabledApiProposals": [
     "cursor",
@@ -145,6 +153,7 @@
     "@types/vscode": "^1.85.0",
     "esbuild": "^0.19.12",
     "ovsx": "^0.10.4",
+    "prettier": "^3.6.2",
     "typescript": "^5.4.5",
     "vsce": "^2.15.0"
   }
