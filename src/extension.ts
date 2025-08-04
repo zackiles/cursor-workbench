@@ -170,6 +170,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
     setTimeout(() => {
       logger.log('Opening Developer Tools in development mode')
+      logger.show()
       vscode.commands.executeCommand(
         'workbench.action.webview.openDeveloperTools'
       )
@@ -276,7 +277,7 @@ export async function activate(context: vscode.ExtensionContext) {
     })
   )
 
-  logger.show()
+ 
 }
 
 export function deactivate() {}
